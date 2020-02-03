@@ -65,10 +65,16 @@ class Experiment(object):
 
         def set_monitor_window():
             mon = monitors.Monitor(monitor_name)
+            if not self.useDisplay:
+                return mon, None
+            if self.fullscreen:
+                win = visual.Window(monitor=mon, fullscr=True, units=['cm', 'norm'])
+            else:
+                win = visual.Window(size=[1200, 800], monitor=mon, units=['cm', 'norm'])
 
-            return mon
+            return mon, win
 
-        self.mon = set_monitor_window()
+        self.mon, self.win = set_monitor_window()
 
         def frame_duration():
             ms_paradigm = self.timeparadigm
@@ -234,16 +240,20 @@ class Experiment(object):
 
 ##############################################################################################################################################
 
+
     def confirmDisplaySet(self):
+        # DETERMINE THE LENGTH OF THE LINES
         horz_leng = np.random.choice(np.arange(1, 10, 0.5)) / 2
         virt_leng = np.random.choice(np.arange(1, 10, 0.5)) / 2
 
+        # CREATE LINE OBJECT
         horz_line = visual.Line(self.win, start=(-horz_leng, 0), end=(horz_leng, 0), units='cm')
         virt_line = visual.Line(self.win, start=(0, -virt_leng), end=(0, virt_leng), units='cm')
 
-
+        # DISPLAY HORIZONTAL LINE
         horz_line.draw()
         self.win.flip()
+        # INPUT
         while True:
             try:
                 value_horz = float(input('Please type the size (in "cm") of the horizontal line displayed: '))
@@ -251,8 +261,10 @@ class Experiment(object):
             except ValueError():
                 print('The format used to describe the size is wrong,\nplease type the correct size in "cm": ')
 
+        # DISPLAY VERTICAL LINE
         virt_line.draw()
         self.win.flip()
+        # INPUT
         while True:
             try:
                 value_virt = float(input('Please type the size (in "cm") of the vertical line displayed: '))
@@ -260,6 +272,7 @@ class Experiment(object):
             except ValueError():
                 print('The format used to describe the size is wrong,\nplease type the correct size in "cm": ')
 
+        # COMPARE ANSWERS
         if value_horz == horz_leng * 2 and value_virt == virt_leng * 2:
             print('Monitor configuration is CORRECT, you can proceed with the trials.')
         else:
@@ -282,20 +295,6 @@ class Experiment(object):
                     break
                 except ValueError:
                     print("Oops!  That was no valid number.  Try again...")
-
-        # CREATE WINDOW
-        def create_window():
-            if not self.useDisplay:
-                return None
-
-            if self.fullscreen:
-                win = visual.Window(monitor=self.mon, fullscr=True, units=['cm', 'norm'])
-            else:
-                win = visual.Window(size=[1200, 800], monitor=self.mon, units=['cm', 'norm'])
-
-            return win
-
-        self.win = create_window()
 
         # CREATE STIMULUS OBJECT
         def stimulus_generator():
