@@ -68,9 +68,9 @@ class Experiment(object):
             if not self.useDisplay:
                 return mon, None
             if self.fullscreen:
-                win = visual.Window(monitor=mon, fullscr=True, units=['cm', 'norm'])
+                win = visual.Window(monitor=mon, fullscr=True, units=['cm', 'norm'], color=(1, 1, 1))
             else:
-                win = visual.Window(size=[1200, 800], monitor=mon, units=['cm', 'norm'])
+                win = visual.Window(size=[1200, 800], monitor=mon, units=['cm', 'norm'], color=(1, 1, 1))
 
             return mon, win
 
@@ -302,13 +302,13 @@ class Experiment(object):
                 vertices=((0, -0.5), (0, 0.5), (0,0), (-0.5,0), (0.5, 0)),
                 lineWidth=5,
                 closeShape=False,
-                lineColor="white",
+                lineColor="black",
                 units='cm'
             )
-            back_mask = visual.TextStim(self.win, text='', units='cm')
-            prime = visual.TextStim(self.win, text='', units='cm')
-            forward_mask = visual.TextStim(self.win, text='', units='cm')
-            target = visual.TextStim(self.win, text='', units='cm')
+            back_mask = visual.TextStim(self.win, text='', units='cm', height=3, alignHoriz='center', alignVert='center', color=(-1, -1, -1))
+            prime = visual.TextStim(self.win, text='', units='cm', height=3, alignHoriz='center', alignVert='center', color=(-1, -1, -1))
+            forward_mask = visual.TextStim(self.win, text='', units='cm', height=3, alignHoriz='center', alignVert='center', color=(-1, -1, -1))
+            target = visual.TextStim(self.win, text='', units='cm', height=3, alignHoriz='center', alignVert='center', color=(-1, -1, -1))
 
             return fixation, back_mask, prime, forward_mask, target
 
