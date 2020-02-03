@@ -1,7 +1,17 @@
-from psychopy import visual, core, monitors, event, clock
-from psychopy.hardware import keyboard
 import pandas as pd
 import numpy as np
+import pip
+
+# TRY IMPORT PSYCHOPY MODULE
+try:
+    from psychopy import visual, core, monitors, event, clock
+    from psychopy.hardware import keyboard
+except ImportError:
+    import pip
+    pip.main(['install', 'psychopy'])
+    from psychopy import visual, core, monitors, event, clock
+    from psychopy.hardware import keyboard
+
 
 class Experiment(object):
     def __init__(self, n, mask_case='upper', pairs_n=50, fullcross=True, conditions_n=3, mask_size=8, onelanguageorder=None,
@@ -285,7 +295,7 @@ class Experiment(object):
         """
         # IF NOT USE DISPLAY
         if not self.useDisplay:
-            return None, None
+            return None
 
         # IF NOT FULL, CHOOSE THE NUMBER OF TRIALS
         if not full:
@@ -429,18 +439,34 @@ class Experiment(object):
                 correct_list.append(False)
         trials_data['correct'] = correct_list
 
-        frame_dur = self.win.monitorFramePeriod
+        return trials_data
 
-        return trials_data, frame_dur
+    def startExperiment(self, full, save=False):
+        if self.fullcross:
+            data_first_trial = self.startTrial('first', full)
+            data_second_trial = self.startTrial('second', full)
+            data_trial_final = data_first_trial.append(data_second_trial).reset_index(drop=True)
+            if save:
+                data_trial_final.to_csv('subject-{}'.format(self.subject_n))
+                return data_trial_final
+            else:
+                return data_trial_final
+        else:
+            data_trial = self.startTrial('first', full)
+            if save:
+                data_trial_final.to_csv('subject-{}.csv'.format(self.subject_n))
+                return data_trial_final
+            else:
+                return data_trial_final
 
-
-test = Experiment(4, useDisplay=True)
+# test = Experiment(4, useDisplay=True)
+# print(test.startExperiment(False))
 # print(test.kb_key_response)
 # test.startTrial()
 # print(test.first_sequence, test.second_sequence)
 # print(len(test.mask_list))
 # test.confirmDisplaySet()
-print(test.startTrial(order='first', full=False))
+# print(test.startTrial(order='first', full=False))
 
 # with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(test.first_sequence, test.second_sequence)
 
