@@ -66,17 +66,9 @@ class Experiment(object):
         def set_monitor_window():
             mon = monitors.Monitor(monitor_name)
 
-            if not useDisplay:
-                return mon, None
+            return mon
 
-            if self.fullscreen:
-                win = visual.Window(monitor=mon, fullscr=True, units=['cm', 'norm'])
-            else:
-                win = visual.Window(size=[1200, 800], monitor=mon, units=['cm', 'norm'])
-
-            return mon, win
-
-        self.mon, self.win = set_monitor_window()
+        self.mon = set_monitor_window()
 
         def frame_duration():
             ms_paradigm = self.timeparadigm
@@ -89,27 +81,6 @@ class Experiment(object):
         self.frame_paradigm = frame_duration()
 
         # Generators
-
-        def stimulus_generator():
-            if not useDisplay:
-                return None, None, None, None, None
-
-            fixation = visual.ShapeStim(self.win, 
-                vertices=((0, -0.5), (0, 0.5), (0,0), (-0.5,0), (0.5, 0)),
-                lineWidth=5,
-                closeShape=False,
-                lineColor="white",
-                units='cm'
-            )
-            back_mask = visual.TextStim(self.win, text='', units='cm')
-            prime = visual.TextStim(self.win, text='', units='cm')
-            forward_mask = visual.TextStim(self.win, text='', units='cm')
-            target = visual.TextStim(self.win, text='', units='cm')
-
-            return fixation, back_mask, prime, forward_mask, target
-
-        self.fixation, self.back_mask, self.prime, self.forward_mask, self.target = stimulus_generator()
-
         def clock_generator():
             monitorclock = clock.Clock()
             return monitorclock
@@ -117,7 +88,7 @@ class Experiment(object):
         self.monitorclock = clock_generator()
 
         def hardware_generator():
-            kb = keyboard.Keyboard()
+            kb = keyboard.Keyboard(waitForStart=True)
 
             return kb
 
@@ -299,7 +270,7 @@ class Experiment(object):
         order must be a string with the position of the trial.
         order = ['first', 'second', 'third']
         """
-
+        # IF NOT USE DISPLAY
         if not self.useDisplay:
             return None, None
 
@@ -311,6 +282,38 @@ class Experiment(object):
                     break
                 except ValueError:
                     print("Oops!  That was no valid number.  Try again...")
+
+        # CREATE WINDOW
+        def create_window():
+            if not self.useDisplay:
+                return None
+
+            if self.fullscreen:
+                win = visual.Window(monitor=self.mon, fullscr=True, units=['cm', 'norm'])
+            else:
+                win = visual.Window(size=[1200, 800], monitor=self.mon, units=['cm', 'norm'])
+
+            return win
+
+        self.win = create_window()
+
+        # CREATE STIMULUS OBJECT
+        def stimulus_generator():
+            fixation = visual.ShapeStim(self.win, 
+                vertices=((0, -0.5), (0, 0.5), (0,0), (-0.5,0), (0.5, 0)),
+                lineWidth=5,
+                closeShape=False,
+                lineColor="white",
+                units='cm'
+            )
+            back_mask = visual.TextStim(self.win, text='', units='cm')
+            prime = visual.TextStim(self.win, text='', units='cm')
+            forward_mask = visual.TextStim(self.win, text='', units='cm')
+            target = visual.TextStim(self.win, text='', units='cm')
+
+            return fixation, back_mask, prime, forward_mask, target
+
+        self.fixation, self.back_mask, self.prime, self.forward_mask, self.target = stimulus_generator()
 
         # LOAD PRIME-TARGET DATAFRAME:
         if order == 'first':
@@ -341,7 +344,7 @@ class Experiment(object):
         # EXPERIMENT LOOP
         for trialN in np.arange(self.language_n): 
             # STIMULUS PREPARATION
-            # self.back_mask.text = mask_df['mask'][trialN]
+            self.back_mask.text = mask_df['mask'][trialN]
             self.prime.text = prime_target_df[columns_pt[0]][trialN]
             self.forward_mask.text = mask_df['mask'][trialN]
             self.target.text = prime_target_df[columns_pt[1]][trialN]
@@ -376,11 +379,13 @@ class Experiment(object):
                     target_onset = self.monitorclock.getTime()
                     self.target.draw()
                     self.kb.clock.reset()
+                    self.kb.start()
                     while not got_keypress:
                         self.target.draw()
                         key = self.kb.getKeys(keyList=('z', 'm'))
                         if key:
                             got_keypress = True
+                            self.kb.stop()
                         self.win.flip()
 
                     # COLLECT TRIAL DATA
