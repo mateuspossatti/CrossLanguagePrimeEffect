@@ -374,8 +374,8 @@ class Experiment(object):
         mask_df = self.mask_df
 
         # CREATE TRIALS DATA FRAME
-        trials_data = pd.DataFrame(columns=['prime', 'target', 'class', 'pair_index', 'mask', 'l1_l2',
-        'key_name', 'correct', 'key_rt', 'key_tDown',
+        trials_data = pd.DataFrame(columns=['prime', 'target', 'group', 'pair_index', 'mask', 'l1_l2',
+        'key_name', 'correct', 'response_time', 'key_tDown',
         'fixation_dur', 'bm_dur', 'prime_dur', 'fm_dur', 'target_dur'])
 
         columns_trial = list(trials_data.columns)
@@ -497,7 +497,21 @@ class Experiment(object):
 
         return trials_data
 
-    def startExperiment(self, full, save=None):
+    def startExperiment(self, full=None, save=None):
+        # SET FULL
+        if full is None:
+            while True:
+                full = str(input('Do you want do the full experiment? (y/n)\n'))
+                if full == 'y':
+                    full = True
+                    break
+                elif full == 'n':
+                    full = False
+                    break
+                else:
+                    print('The command typed is not valid, please answer with "y" to do the full expriment\nor "n" to do a partial experiment.\nYour answer was: "{}"'.format(save))
+
+        # SET SAVE
         if save is None:
             while True:
                 save = str(input('Do you want to save the data from the experiment? (y/n)\n'))
@@ -508,21 +522,20 @@ class Experiment(object):
                     save = True
                     break
                 else:
-                    print('The command typed is invalid, please answer with "y" to save or "n" to not save.\nYour answer was: "{}"'.format(save))
+                    print('The command typed is not valid, please answer with "y" to save or "n" to not save.\nYour answer was: "{}"'.format(save))
 
         if self.fullcross:
             data_first_trial = self.startTrial('first', full)
 
             # REMEMBER OF DELETE LOOP
-            if not full:
-                while True:
-                    value_horz = str(input('Do you want to proceed to the next language trial? (y/n)\n'))
-                    if value_horz == 'n':
-                        return data_first_trial
-                    elif value_horz == 'y':
-                        break
-                    else:
-                        print('The command typed is invalid, please answer with "y" to continue or "n" to stop.\nYour answer was: "{}"'.format(value_horz))
+            while True:
+                value_horz = str(input('Do you want to proceed to the next language trial? (y/n)\n'))
+                if value_horz == 'n':
+                    return data_first_trial
+                elif value_horz == 'y':
+                    break
+                else:
+                    print('The command typed is not valid, please answer with "y" to continue or "n" to stop.\nYour answer was: "{}"'.format(value_horz))
     
             data_second_trial = self.startTrial('second', full)
 
