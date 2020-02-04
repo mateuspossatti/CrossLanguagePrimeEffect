@@ -360,7 +360,7 @@ class Experiment(object):
 
         # CREATE TRIALS DATA FRAME
         trials_data = pd.DataFrame(columns=['prime', 'target', 'class', 'pair_index', 'mask',
-        'key_name', 'correct', 'key_rt', 'key_tDown',
+        'key_name', 'correct', 'response_time', 'key_tDown',
         'fixation_dur', 'bm_dur', 'prime_dur', 'fm_dur', 'target_dur'])
 
         columns_trial = list(trials_data.columns)
