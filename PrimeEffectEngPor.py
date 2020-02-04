@@ -847,5 +847,5 @@ class StatisticalAnalysis():
         fig, axis = self.fig, self.axis
         plt.show()
 
-sa = StatisticalAnalysis()
+# sa = StatisticalAnalysis()
 # with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(StatisticalAnalysis(n=6, save=False).full_preprocess_data)
