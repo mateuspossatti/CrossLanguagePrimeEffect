@@ -29,6 +29,17 @@ class Experiment(object):
                 except ValueError:
                     print("Oops!  That was no valid number.  Try again...")
 
+        if fullscreen is None:
+            while True:
+                fs = str(input('Do you want that the trial be in fullscreen?\n(y/n): '))
+                if fs != 'y' and fs != 'n':
+                    print('The command typed ("{}") is invalid, please type "y" to make the experiment fullscreen\nor "n" to not make the experiment fullscreen'.format(fs))
+                    pass
+                elif fs is 'y':
+                    self.fullscreen = True
+                else:
+                    self.fullscreen = False                    
+
         if mask_case == 'upper':
             self.mask_char = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
         elif mask_case == 'lower':
@@ -87,8 +98,10 @@ class Experiment(object):
                 return mon, None
             if self.fullscreen:
                 win = visual.Window(monitorFramePeriod=60, monitor=mon, fullscr=True, units=['cm', 'norm'], color=(1, 1, 1))
+
             else:
                 win = visual.Window(size=[1200, 800], monitorFramePeriod=60, monitor=mon, units=['cm', 'norm'], color=(1, 1, 1))
+
 
             return mon, win
 
@@ -256,6 +269,17 @@ class Experiment(object):
                 return prime_target, None
 
         self.first_sequence, self.second_sequence = words_sequence()
+
+        while True:
+            startexp = str(input('Do you want to begin the expriment?\n(y/n): '))
+            if startexp != 'y' and startexp != 'n':
+                print('The command typed ("{}") is invalid, please type "y" to begin the experiment\nor "n" to continue without begin the experiment.'.format(startexp))
+            elif startexp is 'y':
+                self.data_trial_final = self.startExperiment()
+                break
+            else:
+                self.win.close()
+                break
 
 
 ##############################################################################################################################################
@@ -541,16 +565,78 @@ class Experiment(object):
 
             data_trial_final = data_first_trial.append(data_second_trial).reset_index(drop=True)
             if save:
-                data_trial_final.to_csv(r'.\trials_data\subject-{}.csv'.format(self.subject_n))
-                return data_trial_final
+                try: 
+                    test = pd.read_csv(r'.\trials_data\subject-{}.csv'.format(self.subject_n))
+                    print('The data for the "subject {}" already exist,\ndo you have certainty that you want to DELETE the OLD DATA and save the new data in the place?'.format(self.subject_n))
+                    while True:
+                        save = str(input('(y/n): '))
+                        if save != 'y' and save != 'n':
+                            print('Oops!  Your reponse "{}" was not valid. Please type "y" to DELETE the OLD DATA and save the new\nor "n" to continue without save the new data.'.format(save))
+                            pass
+                        elif save is 'n':
+                            return data_trial_final
+                        else:
+                            data.to_csv(r'.\trials_data\subject-{}-norm.csv'.format(self.subject_n))
+                            print('The data was saved successfully on the file named "subject-{}-norm.csv" in the "trials_data" directory.'.format(self.subject_n))
+                            while True:
+                                printdata = str(input('Do you want to print out the data collected?\n(y/n): '))
+                                if printdata != 'y' and printdata != 'n':
+                                    print('Oops!  Your reponse "{}" was not valid. Please type "y" to DELETE the OLD DATA and save the new\nor "n" to continue without save the new data.'.format(printdata))
+                                    pass
+                                elif printdata is 'y':
+                                    with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(data_trial_final)
+                                    break
+                        
+                            return data_trial_final
+
+                except FileNotFoundError:
+                    data_trial_final.to_csv(r'.\trials_data\subject-{}.csv'.format(self.subject_n))
+                    print('The data was saved successfully on the file named "subject-{}.csv" in the "trials_data" directory.'.format(self.subject_n))
+                    while True:
+                        printdata = str(input('Do you want to print out the data collected?\n(y/n): '))
+                        if printdata != 'y' and printdata != 'n':
+                            print('Oops!  Your reponse "{}" was not valid. Please type "y" to DELETE the OLD DATA and save the new\nor "n" to continue without save the new data.'.format(printdata))
+                            pass
+                        elif printdata is 'y':
+                            with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(data_trial_final)
+                            break
+
+                    return data_trial_final
+
             else:
+                while True:
+                    printdata = str(input('Do you want to print out the data collected?\n(y/n): '))
+                    if printdata != 'y' and printdata != 'n':
+                        print('Oops!  Your reponse "{}" was not valid. Please type "y" to DELETE the OLD DATA and save the new\nor "n" to continue without save the new data.'.format(printdata))
+                        pass
+                    elif printdata is 'y':
+                        with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(data_trial_final)
+                        break
+
                 return data_trial_final
 
         else:
-            data_trial = self.startTrial('first', full)
+            data_trial_final = self.startTrial('first', full)
             if save:
-                data_trial_final.to_csv(r'.\trials_data\subject-{}.csv'.format(self.subject_n))
-                return data_trial_final
+                try: 
+                    test = pd.read_csv(r'.\trials_data\subject-{}.csv'.format(self.subject_n))
+                    print('The data for the "subject {}" already exist,\ndo you have certainty that you want to DELETE the OLD DATA and save the new data in the place?'.format(self.subject_n))
+                    while True:
+                        save = str(input('(y/n): '))
+                        if save != 'y' and save != 'n':
+                            print('Oops!  Your reponse "{}" was not valid. Please type "y" to DELETE the OLD DATA and save the new\nor "n" to continue without save the new data.'.format(save))
+                            pass
+                        elif save is 'n':
+                            return data_trial_final
+                        else:
+                            data.to_csv(r'.\trials_data\subject-{}-norm.csv'.format(self.subject_n))
+                            print('The data was saved successfully on the file named "subject-{}-norm.csv" in the "trials_data" directory.'.format(self.subject_n))
+
+                except FileNotFoundError:
+                    data_trial_final.to_csv(r'.\trials_data\subject-{}.csv'.format(self.subject_n))
+                    print('The data was saved successfully on the file named "subject-{}.csv" in the "trials_data" directory.'.format(self.subject_n))
+                    return data_trial_final
+
             else:
                 return data_trial_final
 
@@ -625,7 +711,6 @@ class StatisticalAnalysis():
 
             if vdf == 'y':
                 with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(self.full_preprocess_data)
-
 
     def interquartile(self, group=None, df=None):
         # IF THERE'S NO DF THAN RETURN NONE
@@ -805,9 +890,24 @@ class StatisticalAnalysis():
         else:
             data = df
 
-        data.to_csv(r'.\trials_data\subject-{}-norm.csv'.format(self.subject_n))
-        print('The data was saved successfully on the file named "subject-{}-norm.csv" in the "trials_data" directory.'.format(self.subject_n))
-        pass
+        try: 
+            test = pd.read_csv(r'.\trials_data\subject-{}-norm.csv'.format(self.subject_n))
+            print('The data for the "subject {}" already exist,\ndo you have certainty that you want to DELETE the OLD DATA and save the new data in the place?'.format(self.subject_n))
+            while True:
+                save = str(input('(y/n): '))
+                if save != 'y' and save != 'n':
+                    print('Oops!  Your reponse "{}" was not valid. Please type "y" to DELETE the OLD DATA and save the new\nor "n" to continue without save the new data.'.format(save))
+                    pass
+                elif save is 'n':
+                    return
+                else:
+                    data.to_csv(r'.\trials_data\subject-{}-norm.csv'.format(self.subject_n))
+                    print('The data was saved successfully on the file named "subject-{}-norm.csv" in the "trials_data" directory.'.format(self.subject_n))
+
+        except FileNotFoundError:
+            data.to_csv(r'.\trials_data\subject-{}-norm.csv'.format(self.subject_n))
+            print('The data was saved successfully on the file named "subject-{}-norm.csv" in the "trials_data" directory.'.format(self.subject_n))
+            pass
 
     def plotdata(self, first_hue='group', second_hue='l1_l2',  df=None):
         if df is None:
@@ -848,4 +948,5 @@ class StatisticalAnalysis():
         plt.show()
 
 # sa = StatisticalAnalysis()
+# sa.save()
 # with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(StatisticalAnalysis(n=6, save=False).full_preprocess_data)
