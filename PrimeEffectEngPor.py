@@ -359,7 +359,7 @@ class Experiment(object):
         mask_df = self.mask_df
 
         # CREATE TRIALS DATA FRAME
-        trials_data = pd.DataFrame(columns=['prime', 'target', 'class', 'pair_index', 'mask',
+        trials_data = pd.DataFrame(columns=['prime', 'target', 'group', 'pair_index', 'mask',
         'key_name', 'correct', 'response_time', 'key_tDown',
         'fixation_dur', 'bm_dur', 'prime_dur', 'fm_dur', 'target_dur'])
 
