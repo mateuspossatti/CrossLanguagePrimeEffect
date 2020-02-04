@@ -29,6 +29,17 @@ class Experiment(object):
                 except ValueError:
                     print("Oops!  That was no valid number.  Try again...")
 
+        if fullscreen is None:
+            while True:
+                fs = str(input('Do you want that the trial be in fullscreen?\n(y/n): '))
+                if fs != 'y' and fs != 'n':
+                    print('The command typed ("{}") is invalid, please type "y" to make the experiment fullscreen\nor "n" to not make the experiment fullscreen'.format(fs))
+                    pass
+                elif fs is 'y':
+                    self.fullscreen = True
+                else:
+                    self.fullscreen = False                    
+
         if mask_case == 'upper':
             self.mask_char = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
         elif mask_case == 'lower':
@@ -87,8 +98,10 @@ class Experiment(object):
                 return mon, None
             if self.fullscreen:
                 win = visual.Window(monitorFramePeriod=60, monitor=mon, fullscr=True, units=['cm', 'norm'], color=(1, 1, 1))
+
             else:
                 win = visual.Window(size=[1200, 800], monitorFramePeriod=60, monitor=mon, units=['cm', 'norm'], color=(1, 1, 1))
+
 
             return mon, win
 
@@ -174,6 +187,7 @@ class Experiment(object):
                 eng_por['English'] = new_incong_ob
 
                 return eng_por 
+
             cong_df = words_df[['Portuguese', 'English']]
             incong_df = create_incong_df()
             control_df = words_df
@@ -256,6 +270,17 @@ class Experiment(object):
 
         self.first_sequence, self.second_sequence = words_sequence()
 
+        while True:
+            startexp = str(input('Do you want to begin the expriment?\n(y/n): '))
+            if startexp != 'y' and startexp != 'n':
+                print('The command typed ("{}") is invalid, please type "y" to begin the experiment\nor "n" to continue without begin the experiment.'.format(startexp))
+            elif startexp is 'y':
+                self.data_trial_final = self.startExperiment()
+                break
+            else:
+                self.win.close()
+                break
+
 
 ##############################################################################################################################################
 
@@ -336,13 +361,27 @@ class Experiment(object):
         # CREATE TRIAL KEYBOARD:
         trial_kb = keyboard.Keyboard(waitForStart=True)
 
-        # LOAD PRIME-TARGET DATAFRAME:
-        if order == 'first':
-            prime_target_df = self.first_sequence
-        elif order == 'second':
-            prime_target_df = self.second_sequence
+        # CREATE L1_L2 VARIABLE AND LOAD PRIME-TARGET SEQUENCE
+        language_order = self.language_order.split('-')
+
+        if self.fullcross:
+            if order == 'first':
+                prime_target_df = self.first_sequence
+                l1_l2 = language_order[0]
+            elif order == 'second':
+                prime_target_df = self.second_sequence
+                l1_l2 = language_order[1]
+            else:
+                raise Exception('The order used is either misspelled or out of range.\norder = {}'.format(order))
         else:
-            raise Exception('The order used is either misspelled or out of range.\norder = {}'.format(order))
+            if order == 'first':
+                prime_target_df = self.first_sequence
+                l1_l2 = self.onelanguageorder
+            elif order == 'second':
+                prime_target_df = self.second_sequence
+                l1_l2 = self.onelanguageorder
+            else:
+                raise Exception('The order used is either misspelled or out of range.\norder = {}'.format(order))
 
         # PRIME-TARGET DATAFRAME COLUMNS
         columns_pt = list(prime_target_df.columns)
@@ -359,7 +398,7 @@ class Experiment(object):
         mask_df = self.mask_df
 
         # CREATE TRIALS DATA FRAME
-        trials_data = pd.DataFrame(columns=['prime', 'target', 'group', 'pair_index', 'mask',
+        trials_data = pd.DataFrame(columns=['prime', 'target', 'group', 'pair_index', 'mask', 'l1_l2',
         'key_name', 'correct', 'response_time', 'key_tDown',
         'fixation_dur', 'bm_dur', 'prime_dur', 'fm_dur', 'target_dur'])
 
@@ -453,15 +492,16 @@ class Experiment(object):
                         columns_trial[2] : tClass,
                         columns_trial[3] : pair_index,
                         columns_trial[4] : self.back_mask.text,
-                        columns_trial[5] : key[0].name,
-                        columns_trial[6] : None,
-                        columns_trial[7] : key[0].rt,
-                        columns_trial[8] : key[0].tDown, 
-                        columns_trial[9] : time_data['fixation_dur'],
-                        columns_trial[10] : time_data['back_mask_dur'],
-                        columns_trial[11] : time_data['prime_dur'],
-                        columns_trial[12] : time_data['forward_mask_dur'],
-                        columns_trial[13] : time_data['target_dur'],
+                        columns_trial[5] : l1_l2,
+                        columns_trial[6] : key[0].name,
+                        columns_trial[7] : None,
+                        columns_trial[8] : key[0].rt,
+                        columns_trial[9] : key[0].tDown, 
+                        columns_trial[10] : time_data['fixation_dur'],
+                        columns_trial[11] : time_data['back_mask_dur'],
+                        columns_trial[12] : time_data['prime_dur'],
+                        columns_trial[13] : time_data['forward_mask_dur'],
+                        columns_trial[14] : time_data['target_dur'],
                         }, ignore_index=True)
 
                 self.win.flip()
@@ -479,48 +519,435 @@ class Experiment(object):
                 correct_list.append(False)
         trials_data['correct'] = correct_list
 
-        # SHOW REFRESH FRAME INTERVALS
-
         return trials_data
 
-    def startExperiment(self, full, save=False):
+    def startExperiment(self, full=None, save=None):
+        # SET FULL
+        if full is None:
+            while True:
+                full = str(input('Do you want do the full experiment? (y/n)\n'))
+                if full == 'y':
+                    full = True
+                    break
+                elif full == 'n':
+                    full = False
+                    break
+                else:
+                    print('The command typed is not valid, please answer with "y" to do the full expriment\nor "n" to do a partial experiment.\nYour answer was: "{}"'.format(save))
+
+        # SET SAVE
+        if save is None:
+            while True:
+                save = str(input('Do you want to save the data from the experiment? (y/n)\n'))
+                if save == 'n':
+                    save = False
+                    break
+                elif save == 'y':
+                    save = True
+                    break
+                else:
+                    print('The command typed is not valid, please answer with "y" to save or "n" to not save.\nYour answer was: "{}"'.format(save))
+
         if self.fullcross:
             data_first_trial = self.startTrial('first', full)
 
             # REMEMBER OF DELETE LOOP
             while True:
-                try:
-                    value_horz = str(input('Are you ready for the next stage? '))
+                value_horz = str(input('Do you want to proceed to the next language trial? (y/n)\n'))
+                if value_horz == 'n':
+                    return data_first_trial
+                elif value_horz == 'y':
                     break
-                except value_horz == 'no':
-                    print('Are you ready for the next stage now? ')
+                else:
+                    print('The command typed is not valid, please answer with "y" to continue or "n" to stop.\nYour answer was: "{}"'.format(value_horz))
     
             data_second_trial = self.startTrial('second', full)
+
             data_trial_final = data_first_trial.append(data_second_trial).reset_index(drop=True)
             if save:
-                data_trial_final.to_csv(r'.\trials_data\subject-{}.csv'.format(self.subject_n))
-                return data_trial_final
+                try: 
+                    test = pd.read_csv(r'.\trials_data\subject-{}.csv'.format(self.subject_n))
+                    print('The data for the "subject {}" already exist,\ndo you have certainty that you want to DELETE the OLD DATA and save the new data in the place?'.format(self.subject_n))
+                    while True:
+                        save = str(input('(y/n): '))
+                        if save != 'y' and save != 'n':
+                            print('Oops!  Your reponse "{}" was not valid. Please type "y" to DELETE the OLD DATA and save the new\nor "n" to continue without save the new data.'.format(save))
+                            pass
+                        elif save is 'n':
+                            return data_trial_final
+                        else:
+                            data.to_csv(r'.\trials_data\subject-{}-norm.csv'.format(self.subject_n))
+                            print('The data was saved successfully on the file named "subject-{}-norm.csv" in the "trials_data" directory.'.format(self.subject_n))
+                            while True:
+                                printdata = str(input('Do you want to print out the data collected?\n(y/n): '))
+                                if printdata != 'y' and printdata != 'n':
+                                    print('Oops!  Your reponse "{}" was not valid. Please type "y" to DELETE the OLD DATA and save the new\nor "n" to continue without save the new data.'.format(printdata))
+                                    pass
+                                elif printdata is 'y':
+                                    with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(data_trial_final)
+                                    break
+                        
+                            return data_trial_final
+
+                except FileNotFoundError:
+                    data_trial_final.to_csv(r'.\trials_data\subject-{}.csv'.format(self.subject_n))
+                    print('The data was saved successfully on the file named "subject-{}.csv" in the "trials_data" directory.'.format(self.subject_n))
+                    while True:
+                        printdata = str(input('Do you want to print out the data collected?\n(y/n): '))
+                        if printdata != 'y' and printdata != 'n':
+                            print('Oops!  Your reponse "{}" was not valid. Please type "y" to DELETE the OLD DATA and save the new\nor "n" to continue without save the new data.'.format(printdata))
+                            pass
+                        elif printdata is 'y':
+                            with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(data_trial_final)
+                            break
+
+                    return data_trial_final
+
             else:
+                while True:
+                    printdata = str(input('Do you want to print out the data collected?\n(y/n): '))
+                    if printdata != 'y' and printdata != 'n':
+                        print('Oops!  Your reponse "{}" was not valid. Please type "y" to DELETE the OLD DATA and save the new\nor "n" to continue without save the new data.'.format(printdata))
+                        pass
+                    elif printdata is 'y':
+                        with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(data_trial_final)
+                        break
+
                 return data_trial_final
+
         else:
-            data_trial = self.startTrial('first', full)
+            data_trial_final = self.startTrial('first', full)
             if save:
-                data_trial_final.to_csv(r'.\trials_data\subject-{}.csv'.format(self.subject_n))
-                return data_trial_final
+                try: 
+                    test = pd.read_csv(r'.\trials_data\subject-{}.csv'.format(self.subject_n))
+                    print('The data for the "subject {}" already exist,\ndo you have certainty that you want to DELETE the OLD DATA and save the new data in the place?'.format(self.subject_n))
+                    while True:
+                        save = str(input('(y/n): '))
+                        if save != 'y' and save != 'n':
+                            print('Oops!  Your reponse "{}" was not valid. Please type "y" to DELETE the OLD DATA and save the new\nor "n" to continue without save the new data.'.format(save))
+                            pass
+                        elif save is 'n':
+                            return data_trial_final
+                        else:
+                            data.to_csv(r'.\trials_data\subject-{}-norm.csv'.format(self.subject_n))
+                            print('The data was saved successfully on the file named "subject-{}-norm.csv" in the "trials_data" directory.'.format(self.subject_n))
+
+                except FileNotFoundError:
+                    data_trial_final.to_csv(r'.\trials_data\subject-{}.csv'.format(self.subject_n))
+                    print('The data was saved successfully on the file named "subject-{}.csv" in the "trials_data" directory.'.format(self.subject_n))
+                    return data_trial_final
+
             else:
                 return data_trial_final
-
-# TEST AREA
-
-# test = Experiment(2, useDisplay=True)
-# print(test.startTrial('first', False))
-# print(test.startExperiment(True, True))
-
-# with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(test.startExperiment(False, False))
 
 #################################################################################################################################################################################
 
+class StatisticalAnalysis():
+    def __init__(self, n=None, columns=None, save=None, view_data=None):
+        # QUESTION TO THE USER WHAT IS THE VOLUNTEER NUMBER
+        if n is None:
+            while True:
+                try:
+                    n = int(input('Please enter the number of the volunteer: '))
+                    break
+                except ValueError:
+                    print("Oops!  That was no valid number.  Try again...")
+
+        self.subject_n = n
+
+        try:
+            self.full_preprocess_data = pd.read_csv(r'.\trials_data\subject-{}-norm.csv'.format(n), index_col=0)
+            preprocess_data = False
+        except FileNotFoundError:
+            preprocess_data = True
+
+        if preprocess_data:
+            self.subject_raw_df = pd.read_csv(r'.\trials_data\subject-{}.csv'.format(n), index_col=0)
+
+            if columns is None:
+                columns = ['response_time', 'group', 'correct', 'pair_index', 'l1_l2'] 
+            
+            self.subject_df = self.subject_raw_df[columns]
+            self.subject_df['response_time'] = np.around(np.array((self.subject_df['response_time'].values) * 1000), 2)
+
+            self.full_preprocess_data = self.full_preprocess()
+
+        # QUESTION TO THE USER ABOUT HIS DESIRE OF SAVE THE PREPROCESS DATA
+        if preprocess_data:
+            if save is None:
+                while True:
+                    save = str(input('Do you want to save the normalized data? (y/n)\n'))
+                    if save != 'y' and save != 'n':
+                        print('Oops!  Your reponse "{}" was not valid. Please type "y" to save or "n" to not save.'.format(save))
+                        pass
+                    else:
+                        break
+
+                if save == 'y':
+                    self.save()
+
+        self.fig, self.axis = self.plotdata()
+
+        # QUESTION TO THE USER IF HE WANT TO VIEW THE DATA
+        if view_data is None:
+            while True:
+                vd = str(input('Do you want to visualize the graphs that describe the normalized data? (y/n)\n'))
+                if vd != 'y' and vd != 'n':
+                    print('Oops!  Your reponse "{}" was not valid. Please type "y" to visualize the graphs\nor "n" to continue without visualize the graphs.'.format(vd))
+                    pass
+                else:
+                    break
+
+            if vd == 'y':
+                self.view_data()
+
+            while True:
+                vdf = str(input('Do you want to print out the normalized data frame? (y/n)\n'))
+                if vdf != 'y' and vdf != 'n':
+                    print('Oops!  Your reponse "{}" was not valid. Please type "y" to print out the normalized data frame\nor "n" to continue without print out.'.format(vdf))
+                    pass
+                else:
+                    break
+
+            if vdf == 'y':
+                with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(self.full_preprocess_data)
+
+    def interquartile(self, group=None, df=None):
+        # IF THERE'S NO DF THAN RETURN NONE
+        if df is None:
+            return None
+
+        data = df
+
+        # GROUP CONDITIONAL
+        if group is None:
+            data = data['response_time'].values
+            q1, q3 = np.percentile(data, [25, 75])
+            lower_bound = q1 -(1.5*(q3 - q1))
+            upper_bound = q3 +(1.5*(q3 - q1))
+            return lower_bound, upper_bound
+        else:
+            data = data[data['group'] == group]['response_time']
+            q1, q3 = np.percentile(data, [25, 75])
+            lower_bound = q1 -(1.5*(q3 - q1))
+            upper_bound = q3 +(1.5*(q3 - q1))
+            return lower_bound, upper_bound
+
+    def remove_outliers(self, group=None, df=None):
+        # IF THERE'S NO DF THAN RETURN NONE
+        if df is None:
+            return None
+
+        data = df
+
+        n = 0
+
+        if group is None:
+            resp_time = data['response_time'].values
+            bol = []
+            lower, upper = self.interquartile(df=data)
+            for i in range(len(resp_time)):
+                if resp_time[i] < lower or resp_time[i] > upper:
+                    n += 1
+                    bol.append(False)
+                else:
+                    bol.append(True)
+            data = data[bol]
+
+            if n > 0:
+                print('{} outliers removed'.format(n))
+
+            return data.reset_index(drop=True)
+
+        else:
+            bol = []            
+            lower, upper = self.interquartile(df=data, group=group)
+            for i in range(data.shape[0]):
+                if data['group'][i] != group:
+                    bol.append(True)
+                elif data['response_time'][i] < lower or data['response_time'][i] > upper:
+                    n += 1
+                    bol.append(False)
+                else:
+                    bol.append(True)
+
+            data = data[bol]
+
+            if n > 0:
+                print('{}: {} outliers removed'.format(group, n))
+
+            return data.reset_index(drop=True)
+
+    def remove_errors(self, df=None):
+        # IF THERE'S NO DF THAN RETURN NONE
+        if df is None:
+            return None
+
+        data = df
+
+        n, cong, incong, control = (0, 0, 0, 0)
+
+        bol = []
+        for i in range(data.shape[0]):
+            if data['correct'][i] == True:
+                bol.append(True)
+            else:
+                bol.append(False)
+                n += 1
+                if data['group'][i] == 'congruent':
+                    cong += 1
+                elif data['group'][i] == 'incongruent':
+                    incong += 1
+                else:
+                    control += 1
+
+        data = data[bol]
+
+        if n > 0: 
+            print('{} errors removed'.format(n))
+            print('congruent: {cong}, incongruent: {incong}, control: {control}.'.format(cong=cong, incong=incong, control=control))
+    
+        return data.reset_index(drop=True)
+
+    def z_score_normalization(self, df=None):
+        # IF THERE'S NO DF THAN RETURN NONE
+        if df is None:
+            return None
+
+        data = df
+
+        resp_t = data['response_time'].values
+        mean = np.mean(resp_t)
+        std = np.std(resp_t)
+        norm_data = []
+        for i in range(len(resp_t)):
+            z = (resp_t[i] - mean) / std
+            norm_data.append(z)
+        data['z_score_norm'] = norm_data
+
+        return data
+
+    def exp_normalization(self, df=None):
+        # IF THERE'S NO DF THAN RETURN NONE
+        if df is None:
+            return None
+
+        data = df
+
+        resp_t = np.array(data['response_time'].values) / 100
+        exp_list = []
+        for i in range(len(resp_t)):
+            x = np.round(np.exp(resp_t[i]), 5)
+            exp_list.append(x)
+        exp_sum = sum(exp_list)
+        norm_data = []
+        for i in range(len(resp_t)):
+            z = np.exp(resp_t[i]) / exp_sum
+            norm_data.append(z)
+        data['exp_norm'] = norm_data
+        return data
+
+    def rescaling(self, df=None):
+        # IF THERE'S NO DF THAN RETURN NONE
+        if df is None:
+            return None
+
+        data = df
+
+        resp_t = np.array(data['response_time'].values)
+        up = np.max(resp_t)
+        down = np.min(resp_t)
+        div = up - down
+        norm_values = []
+        for i in range(len(resp_t)):
+            x = (resp_t[i] - down) / div
+            norm_values.append(x)
+        data['rescaling_data'] = norm_values
+        return data
+
+    def full_preprocess(self, df=None):
+        # IF THERE'S NO DF THAN RETURN NONE
+        if df is None:
+            data = self.subject_df
+
+        else:
+            data = df
+
+        data = self.remove_errors(df=data)
+        data = self.remove_outliers(df=data, group='incongruent')
+        data = self.remove_outliers(df=data, group='congruent')
+        data = self.remove_outliers(df=data, group='control')
+        data = self.z_score_normalization(df=data)
+        data = self.exp_normalization(df=data)
+        data = self.rescaling(df=data)
+        data = data.drop('correct', axis=1)
+
+        return data
+
+    def save(self, df=None):
+        if df is None:
+            data = self.full_preprocess_data
+        else:
+            data = df
+
+        try: 
+            test = pd.read_csv(r'.\trials_data\subject-{}-norm.csv'.format(self.subject_n))
+            print('The data for the "subject {}" already exist,\ndo you have certainty that you want to DELETE the OLD DATA and save the new data in the place?'.format(self.subject_n))
+            while True:
+                save = str(input('(y/n): '))
+                if save != 'y' and save != 'n':
+                    print('Oops!  Your reponse "{}" was not valid. Please type "y" to DELETE the OLD DATA and save the new\nor "n" to continue without save the new data.'.format(save))
+                    pass
+                elif save is 'n':
+                    return
+                else:
+                    data.to_csv(r'.\trials_data\subject-{}-norm.csv'.format(self.subject_n))
+                    print('The data was saved successfully on the file named "subject-{}-norm.csv" in the "trials_data" directory.'.format(self.subject_n))
+
+        except FileNotFoundError:
+            data.to_csv(r'.\trials_data\subject-{}-norm.csv'.format(self.subject_n))
+            print('The data was saved successfully on the file named "subject-{}-norm.csv" in the "trials_data" directory.'.format(self.subject_n))
+            pass
+
+    def plotdata(self, first_hue='group', second_hue='l1_l2',  df=None):
+        if df is None:
+            data = self.full_preprocess_data
+        else:
+            data = df
+
+        sequence = ['incongruent', 'congruent', 'control']
+
+        fig, axes = plt.subplots(2, 2, figsize=(16, 16), squeeze=True)
+
+        sns.catplot(data=data, x=first_hue, y='z_score_norm', ax=axes[0, 0], order=sequence, kind='box')
+        axes[0, 0].grid(axis='y', which='major')
+
+        sns.violinplot(data=data, x=first_hue, y='response_time', hue=second_hue, split=True, ax=axes[0, 1], order=sequence, legend=False)
+        axes[0, 1].grid(axis='y', which='major')
 
 
+        sns.kdeplot(data[data[first_hue] == 'control']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='g')
+        sns.kdeplot(data[data[first_hue] == 'incongruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='b')
+        sns.kdeplot(data[data[first_hue] == 'congruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='tab:orange')
+        sns.kdeplot(data[data[first_hue] == 'control']['response_time'], alpha=.8, ax=axes[1, 0], color='g')
+        sns.kdeplot(data[data[first_hue] == 'incongruent']['response_time'], alpha=.8, ax=axes[1, 0], color='b')
+        sns.kdeplot(data[data[first_hue] == 'congruent']['response_time'], alpha=.8, ax=axes[1, 0], color='tab:orange')
+        axes[1, 0].axvline(np.median(data[data[first_hue] == 'control']['response_time']), alpha=.8, ymax=.5, c='g')
+        axes[1, 0].axvline(np.median(data[data[first_hue] == 'incongruent']['response_time']), alpha=.8, ymax=.5, c='b')
+        axes[1, 0].axvline(np.median(data[data[first_hue] == 'congruent']['response_time']), alpha=.8, ymax=.5, c='tab:orange')
+        axes[1, 0].legend(['control', 'incongruent', 'congruent'])
 
+        cong = data[data['group'] == 'congruent']
+        sns.distplot(cong['response_time'], ax=axes[1, 1], color='tab:orange')
+        axes[1, 1].grid(axis='y', which='major')
 
+        return fig, axes
+
+    def view_data(self):
+        fig, axis = self.fig, self.axis
+        plt.show()
+
+# actual code
+# sa = StatisticalAnalysis()
+# sa.save()
+# with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(StatisticalAnalysis(n=6, save=False).full_preprocess_data)

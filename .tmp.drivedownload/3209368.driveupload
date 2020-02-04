@@ -1,0 +1,27 @@
+0000000000000000000000000000000000000000 a2b233e24f99ae235d612d057aa2f6028b2539e8 Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580700758 -0800	commit (initial): prime effect cross language study.
+a2b233e24f99ae235d612d057aa2f6028b2539e8 adb7963e3b48c983653cf51f3a7f012f2749181c Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580701106 -0800	commit: add readme
+adb7963e3b48c983653cf51f3a7f012f2749181c aed5a060c46900cc213acc8df5edc428c1714d55 Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580705138 -0800	commit: display doesn't start on the begining
+aed5a060c46900cc213acc8df5edc428c1714d55 864c2663b9288865d3c7924c5d3cf8a8944ce0cc Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580706565 -0800	commit: confirmDisplaySet fixed
+864c2663b9288865d3c7924c5d3cf8a8944ce0cc 5a4f70d38ca34d59b5a52b19acf44a14b1de9d9d Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580707596 -0800	commit: fixed color, now white and black
+5a4f70d38ca34d59b5a52b19acf44a14b1de9d9d feedddf3562604d4d07f753ef5abf4233510038b Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580717498 -0800	commit: add save data to csv, run full trial
+feedddf3562604d4d07f753ef5abf4233510038b 547d54b01f6d132604912927b81ecd53001c306d Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580777264 -0800	commit: remove apagar.py
+547d54b01f6d132604912927b81ecd53001c306d 86bacdc242156edfeea6415ab68dd52e7e6daa1c Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580777313 -0800	commit: add requirements.txt and trials_data folder
+86bacdc242156edfeea6415ab68dd52e7e6daa1c f70d0941ac1f710b7f9f0d58480f327d8a2b3f4a Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580779512 -0800	commit: this version has the startExperiment function working.
+f70d0941ac1f710b7f9f0d58480f327d8a2b3f4a f70d0941ac1f710b7f9f0d58480f327d8a2b3f4a Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580779653 -0800	checkout: moving from master to SAdevelop
+f70d0941ac1f710b7f9f0d58480f327d8a2b3f4a f70d0941ac1f710b7f9f0d58480f327d8a2b3f4a Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580779780 -0800	checkout: moving from SAdevelop to SAdevelop
+f70d0941ac1f710b7f9f0d58480f327d8a2b3f4a 7922ada8418850a88ee255bdcda6ab60668ce123 Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580779875 -0800	commit: beginning of StatisticalAnalysis class.
+7922ada8418850a88ee255bdcda6ab60668ce123 f70d0941ac1f710b7f9f0d58480f327d8a2b3f4a Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580780243 -0800	checkout: moving from SAdevelop to master
+f70d0941ac1f710b7f9f0d58480f327d8a2b3f4a 5c87b0e8303b63996b40a1b24cf5958cf01baaad Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580780289 -0800	commit: correction on the trials data columns name
+5c87b0e8303b63996b40a1b24cf5958cf01baaad 5c87b0e8303b63996b40a1b24cf5958cf01baaad Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580780896 -0800	checkout: moving from master to master
+5c87b0e8303b63996b40a1b24cf5958cf01baaad 44f6ec7a866f86426336c4dcd3354647245ddc7b Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580781101 -0800	commit: update
+44f6ec7a866f86426336c4dcd3354647245ddc7b 7922ada8418850a88ee255bdcda6ab60668ce123 Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580781193 -0800	checkout: moving from master to SAdevelop
+7922ada8418850a88ee255bdcda6ab60668ce123 5934781c1febfec2b6f6712da32e29dbe1839b9b Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580781943 -0800	commit: update
+5934781c1febfec2b6f6712da32e29dbe1839b9b 44f6ec7a866f86426336c4dcd3354647245ddc7b Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580781997 -0800	checkout: moving from SAdevelop to master
+44f6ec7a866f86426336c4dcd3354647245ddc7b d7885704c0dd3cd7580c6ca2f62f3c1369faaf65 Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580782072 -0800	commit: update columns name in trials data
+d7885704c0dd3cd7580c6ca2f62f3c1369faaf65 5934781c1febfec2b6f6712da32e29dbe1839b9b Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580782107 -0800	checkout: moving from master to SAdevelop
+5934781c1febfec2b6f6712da32e29dbe1839b9b e660efb6202d739cefe862d46d9365b293cd4e0a Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580782262 -0800	commit: update
+e660efb6202d739cefe862d46d9365b293cd4e0a 97dd51f55681a3141ea8e5c071aa7fcf789e9ccc Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580789759 -0800	commit: The class StatisticalAnalsys is fixed and the Experiment class is also working
+97dd51f55681a3141ea8e5c071aa7fcf789e9ccc 75b3a419a4539170c1824b6e104047fc47c4365e Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580789886 -0800	commit: remove the plt.show() comment on the plotdata function
+75b3a419a4539170c1824b6e104047fc47c4365e ded170fa6a7e1f94d221b6f2c6b2fdb5b4ac64b4 Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580790068 -0800	commit: update
+ded170fa6a7e1f94d221b6f2c6b2fdb5b4ac64b4 02f60df628d73a78c2a98ad823ecd355d2038d0f Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580796759 -0800	commit: correction on the tiral data columns name
+02f60df628d73a78c2a98ad823ecd355d2038d0f e70e806a1cfe2bf2a3e8517883e1947112854ccf Mateus Caetano Possatti <mateuspossatti@gmail.com> 1580796976 -0800	commit: update
