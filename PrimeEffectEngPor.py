@@ -794,7 +794,6 @@ class StatisticalAnalysis():
         sns.distplot(cong['response_time'], ax=axes[1, 1], color='tab:orange')
         axes[1, 1].grid(axis='y', which='major')
 
-        # plt.show()
         return fig, axes
 
     def view_data(self):
