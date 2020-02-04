@@ -3,11 +3,13 @@ from psychopy.hardware import keyboard
 import pandas as pd
 import numpy as np
 
-df = pd.read_csv(r'.\trials_data\subject-2.csv', index_col=0)
+# TEST AREA
 
+# test = Experiment(2, useDisplay=True)
+# print(test.startTrial('first', False))
+# print(test.startExperiment(True, True))
 
-df.rename(columns={'class' : 'group'}, inplace=True)
-
+# with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(test.startExperiment(False))
 
 
 # por_prime_df = df[:150]
@@ -25,5 +27,5 @@ df.rename(columns={'class' : 'group'}, inplace=True)
 # print(por_cor/150, eng_cor/150)
 # print(df.columns)
 
-df.to_csv(r'.\trials_data\subject-.csv')
+# df.to_csv(r'.\trials_data\subject-2.csv')
 

@@ -174,6 +174,7 @@ class Experiment(object):
                 eng_por['English'] = new_incong_ob
 
                 return eng_por 
+
             cong_df = words_df[['Portuguese', 'English']]
             incong_df = create_incong_df()
             control_df = words_df
@@ -336,13 +337,27 @@ class Experiment(object):
         # CREATE TRIAL KEYBOARD:
         trial_kb = keyboard.Keyboard(waitForStart=True)
 
-        # LOAD PRIME-TARGET DATAFRAME:
-        if order == 'first':
-            prime_target_df = self.first_sequence
-        elif order == 'second':
-            prime_target_df = self.second_sequence
+        # CREATE L1_L2 VARIABLE AND LOAD PRIME-TARGET SEQUENCE
+        language_order = self.language_order.split('-')
+
+        if self.fullcross:
+            if order == 'first':
+                prime_target_df = self.first_sequence
+                l1_l2 = language_order[0]
+            elif order == 'second':
+                prime_target_df = self.second_sequence
+                l1_l2 = language_order[1]
+            else:
+                raise Exception('The order used is either misspelled or out of range.\norder = {}'.format(order))
         else:
-            raise Exception('The order used is either misspelled or out of range.\norder = {}'.format(order))
+            if order == 'first':
+                prime_target_df = self.first_sequence
+                l1_l2 = self.onelanguageorder
+            elif order == 'second':
+                prime_target_df = self.second_sequence
+                l1_l2 = self.onelanguageorder
+            else:
+                raise Exception('The order used is either misspelled or out of range.\norder = {}'.format(order))
 
         # PRIME-TARGET DATAFRAME COLUMNS
         columns_pt = list(prime_target_df.columns)
@@ -359,7 +374,7 @@ class Experiment(object):
         mask_df = self.mask_df
 
         # CREATE TRIALS DATA FRAME
-        trials_data = pd.DataFrame(columns=['prime', 'target', 'class', 'pair_index', 'mask',
+        trials_data = pd.DataFrame(columns=['prime', 'target', 'class', 'pair_index', 'mask', 'l1_l2',
         'key_name', 'correct', 'key_rt', 'key_tDown',
         'fixation_dur', 'bm_dur', 'prime_dur', 'fm_dur', 'target_dur'])
 
@@ -453,15 +468,16 @@ class Experiment(object):
                         columns_trial[2] : tClass,
                         columns_trial[3] : pair_index,
                         columns_trial[4] : self.back_mask.text,
-                        columns_trial[5] : key[0].name,
-                        columns_trial[6] : None,
-                        columns_trial[7] : key[0].rt,
-                        columns_trial[8] : key[0].tDown, 
-                        columns_trial[9] : time_data['fixation_dur'],
-                        columns_trial[10] : time_data['back_mask_dur'],
-                        columns_trial[11] : time_data['prime_dur'],
-                        columns_trial[12] : time_data['forward_mask_dur'],
-                        columns_trial[13] : time_data['target_dur'],
+                        columns_trial[5] : l1_l2,
+                        columns_trial[6] : key[0].name,
+                        columns_trial[7] : None,
+                        columns_trial[8] : key[0].rt,
+                        columns_trial[9] : key[0].tDown, 
+                        columns_trial[10] : time_data['fixation_dur'],
+                        columns_trial[11] : time_data['back_mask_dur'],
+                        columns_trial[12] : time_data['prime_dur'],
+                        columns_trial[13] : time_data['forward_mask_dur'],
+                        columns_trial[14] : time_data['target_dur'],
                         }, ignore_index=True)
 
                 self.win.flip()
@@ -479,29 +495,44 @@ class Experiment(object):
                 correct_list.append(False)
         trials_data['correct'] = correct_list
 
-        # SHOW REFRESH FRAME INTERVALS
-
         return trials_data
 
-    def startExperiment(self, full, save=False):
+    def startExperiment(self, full, save=None):
+        if save is None:
+            while True:
+                save = str(input('Do you want to save the data from the experiment? (y/n)\n'))
+                if save == 'n':
+                    save = False
+                    break
+                elif save == 'y':
+                    save = True
+                    break
+                else:
+                    print('The command typed is invalid, please answer with "y" to save or "n" to not save.\nYour answer was: "{}"'.format(save))
+
         if self.fullcross:
             data_first_trial = self.startTrial('first', full)
 
             # REMEMBER OF DELETE LOOP
-            while True:
-                try:
-                    value_horz = str(input('Are you ready for the next stage? '))
-                    break
-                except value_horz == 'no':
-                    print('Are you ready for the next stage now? ')
+            if not full:
+                while True:
+                    value_horz = str(input('Do you want to proceed to the next language trial? (y/n)\n'))
+                    if value_horz == 'n':
+                        return data_first_trial
+                    elif value_horz == 'y':
+                        break
+                    else:
+                        print('The command typed is invalid, please answer with "y" to continue or "n" to stop.\nYour answer was: "{}"'.format(value_horz))
     
             data_second_trial = self.startTrial('second', full)
+
             data_trial_final = data_first_trial.append(data_second_trial).reset_index(drop=True)
             if save:
                 data_trial_final.to_csv(r'.\trials_data\subject-{}.csv'.format(self.subject_n))
                 return data_trial_final
             else:
                 return data_trial_final
+
         else:
             data_trial = self.startTrial('first', full)
             if save:
@@ -510,48 +541,79 @@ class Experiment(object):
             else:
                 return data_trial_final
 
-# TEST AREA
-
-# test = Experiment(2, useDisplay=True)
-# print(test.startTrial('first', False))
-# print(test.startExperiment(True, True))
-
-# with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(test.startExperiment(False, False))
-
 #################################################################################################################################################################################
 
-class StatiticalAnalysis():
-    def __init__(self, n):
-        self.subject_df = pd.read_csv(r'.\trials_data\subject-{}.csv'.format(n))
+class StatisticalAnalysis():
+    def __init__(self, n=None, columns=None, save=None):
+        # QUESTION TO THE USER WHAT IS THE VOLUNTEER NUMBER
+        if n is None:
+            while True:
+                try:
+                    n = int(input('Please enter the number of the volunteer: '))
+                    break
+                except ValueError:
+                    print("Oops!  That was no valid number.  Try again...")
 
-    def interquartile(self, group=False):
-        data = self.subject_df
+        self.subject_n = n
+
+        self.subject_raw_df = pd.read_csv(r'.\trials_data\subject-{}.csv'.format(n), index_col=0)
+
+        if columns is None:
+            columns = ['response_time', 'group', 'correct', 'pair_index', 'l1_l2'] 
+        
+        self.subject_df = self.subject_raw_df[columns]
+
+        self.full_preprocess_data = self.full_preprocess()
+
+        # QUESTION TO THE USER ABOUT HIS DESIRE OF SAVE THE PREPROCESS DATA
+        if save is None:
+            while True:
+                save = str(input('Do you want to save the normalized data? (y/n)\n'))
+                if save != 'y' and save != 'n':
+                    print('Oops!  Your reponse "{}" was not valid. Please type "y" to save or "n" to not save.'.format(save))
+                    pass
+                else:
+                    break
+
+            if save == 'y':
+                self.save()
+
+        self.fig, self.axis = self.plotdata()
+
+    def interquartile(self, group=None, df=None):
+        # IF THERE'S NO DF THAN RETURN NONE
+        if df is None:
+            return None
+
+        data = df
 
         # GROUP CONDITIONAL
-        if not group:
-            data = data['respose_time'].values
+        if group is None:
+            data = data['response_time'].values
             q1, q3 = np.percentile(data, [25, 75])
             lower_bound = q1 -(1.5*(q3 - q1))
             upper_bound = q3 +(1.5*(q3 - q1))
             return lower_bound, upper_bound
         else:
-            data = data[data['group'] == group]['respose_time']
+            data = data[data['group'] == group]['response_time']
             q1, q3 = np.percentile(data, [25, 75])
             lower_bound = q1 -(1.5*(q3 - q1))
             upper_bound = q3 +(1.5*(q3 - q1))
             return lower_bound, upper_bound
 
     def remove_outliers(self, group=None, df=None):
-        data = ''
+        # IF THERE'S NO DF THAN RETURN NONE
         if df is None:
-            data = self.data
-        else:
-            data=df
+            return None
+
+        data = df
+
         n = 0
+
         if group is None:
             resp_time = data['response_time'].values
             bol = []
-            lower, upper = self.interquartile()
+            lower, upper = self.interquartile(df=data)
             for i in range(len(resp_time)):
                 if resp_time[i] < lower or resp_time[i] > upper:
                     n += 1
@@ -559,12 +621,15 @@ class StatiticalAnalysis():
                 else:
                     bol.append(True)
             data = data[bol]
+
             if n > 0:
                 print('{} outliers removed'.format(n))
+
             return data.reset_index(drop=True)
+
         else:
             bol = []            
-            lower, upper = self.interquartile(group=group, df=data)
+            lower, upper = self.interquartile(df=data, group=group)
             for i in range(data.shape[0]):
                 if data['group'][i] != group:
                     bol.append(True)
@@ -573,11 +638,165 @@ class StatiticalAnalysis():
                     bol.append(False)
                 else:
                     bol.append(True)
+
             data = data[bol]
+
             if n > 0:
                 print('{}: {} outliers removed'.format(group, n))
+
             return data.reset_index(drop=True)
 
+    def remove_errors(self, df=None):
+        # IF THERE'S NO DF THAN RETURN NONE
+        if df is None:
+            return None
+
+        data = df
+
+        n, cong, incong, control = (0, 0, 0, 0)
+
+        bol = []
+        for i in range(data.shape[0]):
+            if data['correct'][i] == True:
+                bol.append(True)
+            else:
+                bol.append(False)
+                n += 1
+                if data['group'][i] == 'congruent':
+                    cong += 1
+                elif data['group'][i] == 'incongruent':
+                    incong += 1
+                else:
+                    control += 1
+
+        data = data[bol]
+
+        if n > 0: 
+            print('{} errors removed'.format(n))
+            print('congruent: {cong}, incongruent: {incong}, control: {control}.'.format(cong=cong, incong=incong, control=control))
+    
+        return data.reset_index(drop=True)
+
+    def z_score_normalization(self, df=None):
+        # IF THERE'S NO DF THAN RETURN NONE
+        if df is None:
+            return None
+
+        data = df
+
+        resp_t = data['response_time'].values
+        mean = np.mean(resp_t)
+        std = np.std(resp_t)
+        norm_data = []
+        for i in range(len(resp_t)):
+            z = (resp_t[i] - mean) / std
+            norm_data.append(z)
+        data['z_score_norm'] = norm_data
+
+        return data
+
+    def exp_normalization(self, df=None):
+        # IF THERE'S NO DF THAN RETURN NONE
+        if df is None:
+            return None
+
+        data = df
+
+        resp_t = np.array(data['response_time'].values) / 100
+        exp_list = []
+        for i in range(len(resp_t)):
+            x = np.round(np.exp(resp_t[i]), 5)
+            exp_list.append(x)
+        exp_sum = sum(exp_list)
+        norm_data = []
+        for i in range(len(resp_t)):
+            z = np.exp(resp_t[i]) / exp_sum
+            norm_data.append(z)
+        data['exp_norm'] = norm_data
+        return data
+
+    def rescaling(self, df=None):
+        # IF THERE'S NO DF THAN RETURN NONE
+        if df is None:
+            return None
+
+        data = df
+
+        resp_t = np.array(data['response_time'].values)
+        up = np.max(resp_t)
+        down = np.min(resp_t)
+        div = up - down
+        norm_values = []
+        for i in range(len(resp_t)):
+            x = (resp_t[i] - down) / div
+            norm_values.append(x)
+        data['rescaling_data'] = norm_values
+        return data
+
+    def full_preprocess(self, df=None):
+        # IF THERE'S NO DF THAN RETURN NONE
+        if df is None:
+            data = self.subject_df
+
+        else:
+            data = df
+
+        data = self.remove_errors(df=data)
+        data = self.remove_outliers(df=data, group='incongruent')
+        data = self.remove_outliers(df=data, group='congruent')
+        data = self.remove_outliers(df=data, group='control')
+        data = self.z_score_normalization(df=data)
+        data = self.exp_normalization(df=data)
+        data = self.rescaling(df=data)
+        data = data.drop('correct', axis=1)
+
+        return data
+
+    def save(self, df=None):
+        if df is None:
+            data = self.full_preprocess_data
+        else:
+            data = df
+
+        data.to_csv(r'.\trials_data\subject-{}-norm.csv'.format(self.subject_n))
+        print('The data was saved successfully on the file named "subject-{}-norm.csv" in the "trials_data" directory.'.format(self.subject_n))
+        pass
+
+    def plotdata(self, first_hue='group', second_hue='l1_l2',  df=None):
+        if df is None:
+            data = self.full_preprocess_data
+        else:
+            data = df
+
+        sequence = ['incongruent', 'congruent', 'control']
+
+        fig, axes = plt.subplots(2, 2, figsize=(16, 16), squeeze=True)
+
+        sns.catplot(data=data, x=first_hue, y='z_score_norm', ax=axes[0, 0], order=sequence, kind='box')
+        axes[0, 0].grid(axis='y', which='major')
+
+        sns.violinplot(data=data, x=first_hue, y='response_time', hue=second_hue, split=True, ax=axes[0, 1], order=sequence, legend=False)
+        axes[0, 1].grid(axis='y', which='major')
 
 
+        sns.kdeplot(data[data[first_hue] == 'control']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='g')
+        sns.kdeplot(data[data[first_hue] == 'incongruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='b')
+        sns.kdeplot(data[data[first_hue] == 'congruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='tab:orange')
+        sns.kdeplot(data[data[first_hue] == 'control']['response_time'], alpha=.8, ax=axes[1, 0], color='g')
+        sns.kdeplot(data[data[first_hue] == 'incongruent']['response_time'], alpha=.8, ax=axes[1, 0], color='b')
+        sns.kdeplot(data[data[first_hue] == 'congruent']['response_time'], alpha=.8, ax=axes[1, 0], color='tab:orange')
+        axes[1, 0].axvline(np.median(data[data[first_hue] == 'control']['response_time']), alpha=.8, ymax=.5, c='g')
+        axes[1, 0].axvline(np.median(data[data[first_hue] == 'incongruent']['response_time']), alpha=.8, ymax=.5, c='b')
+        axes[1, 0].axvline(np.median(data[data[first_hue] == 'congruent']['response_time']), alpha=.8, ymax=.5, c='tab:orange')
+        axes[1, 0].legend(['control', 'incongruent', 'congruent'])
 
+        cong = data[data['group'] == 'congruent']
+        sns.distplot(cong['response_time'], ax=axes[1, 1], color='tab:orange')
+        axes[1, 1].grid(axis='y', which='major')
+
+        # plt.show()
+        return fig, axes
+
+    def view_data(self):
+        fig, axis = self.fig, self.axis
+        plt.show()
