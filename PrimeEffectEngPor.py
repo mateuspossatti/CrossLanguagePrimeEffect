@@ -557,7 +557,7 @@ class Experiment(object):
 #################################################################################################################################################################################
 
 class StatisticalAnalysis():
-    def __init__(self, n=None, columns=None, save=None):
+    def __init__(self, n=None, columns=None, save=None, view_data=None):
         # QUESTION TO THE USER WHAT IS THE VOLUNTEER NUMBER
         if n is None:
             while True:
@@ -569,29 +569,63 @@ class StatisticalAnalysis():
 
         self.subject_n = n
 
-        self.subject_raw_df = pd.read_csv(r'.\trials_data\subject-{}.csv'.format(n), index_col=0)
+        try:
+            self.full_preprocess_data = pd.read_csv(r'.\trials_data\subject-{}-norm.csv'.format(n), index_col=0)
+            preprocess_data = False
+        except FileNotFoundError:
+            preprocess_data = True
 
-        if columns is None:
-            columns = ['response_time', 'group', 'correct', 'pair_index', 'l1_l2'] 
-        
-        self.subject_df = self.subject_raw_df[columns]
+        if preprocess_data:
+            self.subject_raw_df = pd.read_csv(r'.\trials_data\subject-{}.csv'.format(n), index_col=0)
 
-        self.full_preprocess_data = self.full_preprocess()
+            if columns is None:
+                columns = ['response_time', 'group', 'correct', 'pair_index', 'l1_l2'] 
+            
+            self.subject_df = self.subject_raw_df[columns]
+            self.subject_df['response_time'] = np.around(np.array((self.subject_df['response_time'].values) * 1000), 2)
+
+            self.full_preprocess_data = self.full_preprocess()
 
         # QUESTION TO THE USER ABOUT HIS DESIRE OF SAVE THE PREPROCESS DATA
-        if save is None:
+        if preprocess_data:
+            if save is None:
+                while True:
+                    save = str(input('Do you want to save the normalized data? (y/n)\n'))
+                    if save != 'y' and save != 'n':
+                        print('Oops!  Your reponse "{}" was not valid. Please type "y" to save or "n" to not save.'.format(save))
+                        pass
+                    else:
+                        break
+
+                if save == 'y':
+                    self.save()
+
+        self.fig, self.axis = self.plotdata()
+
+        # QUESTION TO THE USER IF HE WANT TO VIEW THE DATA
+        if view_data is None:
             while True:
-                save = str(input('Do you want to save the normalized data? (y/n)\n'))
-                if save != 'y' and save != 'n':
-                    print('Oops!  Your reponse "{}" was not valid. Please type "y" to save or "n" to not save.'.format(save))
+                vd = str(input('Do you want to visualize the graphs that describe the normalized data? (y/n)\n'))
+                if vd != 'y' and vd != 'n':
+                    print('Oops!  Your reponse "{}" was not valid. Please type "y" to visualize the graphs\nor "n" to continue without visualize the graphs.'.format(vd))
                     pass
                 else:
                     break
 
-            if save == 'y':
-                self.save()
+            if vd == 'y':
+                self.view_data()
 
-        self.fig, self.axis = self.plotdata()
+            while True:
+                vdf = str(input('Do you want to print out the normalized data frame? (y/n)\n'))
+                if vdf != 'y' and vdf != 'n':
+                    print('Oops!  Your reponse "{}" was not valid. Please type "y" to print out the normalized data frame\nor "n" to continue without print out.'.format(vdf))
+                    pass
+                else:
+                    break
+
+            if vdf == 'y':
+                with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(self.full_preprocess_data)
+
 
     def interquartile(self, group=None, df=None):
         # IF THERE'S NO DF THAN RETURN NONE
@@ -812,3 +846,6 @@ class StatisticalAnalysis():
     def view_data(self):
         fig, axis = self.fig, self.axis
         plt.show()
+
+sa = StatisticalAnalysis()
+# with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(StatisticalAnalysis(n=6, save=False).full_preprocess_data)
