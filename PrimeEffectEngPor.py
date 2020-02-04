@@ -1,3 +1,5 @@
+from matplotlib import pyplot as plt
+import seaborn as sns
 import pandas as pd
 import numpy as np
 import pip
@@ -14,14 +16,18 @@ except ImportError:
 
 
 class Experiment(object):
-    def __init__(self, n, mask_case='upper', pairs_n=50, fullcross=True, conditions_n=3, mask_size=8, onelanguageorder=None,
+    def __init__(self, n=None, mask_case='upper', pairs_n=50, fullcross=True, conditions_n=3, mask_size=8, onelanguageorder=None,
     fullscreen=False, screen_hz=60, timeparadigm=None, kb_keys=None, useDisplay=True, monitor_name='SurfaceBook2-manual'):
-        # while True:
-        #     try:
-        #         n = int(input('Please enter the number of the volunteer: '))
-        #         break
-        #     except ValueError:
-        #         print("Oops!  That was no valid number.  Try again...")
+        """:Parameters:
+        fullcross will ditermine if the effect will be studied in the two ways. 
+        """
+        if n is None:
+            while True:
+                try:
+                    n = int(input('Please enter the number of the volunteer: '))
+                    break
+                except ValueError:
+                    print("Oops!  That was no valid number.  Try again...")
 
         if mask_case == 'upper':
             self.mask_char = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
@@ -52,6 +58,7 @@ class Experiment(object):
         self.screen_hz = screen_hz
         self.useDisplay = useDisplay
 
+        # DETERMINE LANGUAGE ORDER FOR THE ACTUAL SUBJECT
         def subject_experiment_order():
             left, right = self.kb_keys
             if fullcross == True:
@@ -73,19 +80,21 @@ class Experiment(object):
 
         self.language_order, self.kb_key_response = subject_experiment_order() 
 
+        # CREATE MONITOR AND WINDOW
         def set_monitor_window():
             mon = monitors.Monitor(monitor_name)
             if not self.useDisplay:
                 return mon, None
             if self.fullscreen:
-                win = visual.Window(monitor=mon, fullscr=True, units=['cm', 'norm'], color=(1, 1, 1))
+                win = visual.Window(monitorFramePeriod=60, monitor=mon, fullscr=True, units=['cm', 'norm'], color=(1, 1, 1))
             else:
-                win = visual.Window(size=[1200, 800], monitor=mon, units=['cm', 'norm'], color=(1, 1, 1))
+                win = visual.Window(size=[1200, 800], monitorFramePeriod=60, monitor=mon, units=['cm', 'norm'], color=(1, 1, 1))
 
             return mon, win
 
         self.mon, self.win = set_monitor_window()
 
+        # DETERMINE FRAME DURATION:
         def frame_duration():
             ms_paradigm = self.timeparadigm
             screen_hz = self.screen_hz
@@ -257,8 +266,8 @@ class Experiment(object):
         virt_leng = np.random.choice(np.arange(1, 10, 0.5)) / 2
 
         # CREATE LINE OBJECT
-        horz_line = visual.Line(self.win, start=(-horz_leng, 0), end=(horz_leng, 0), units='cm')
-        virt_line = visual.Line(self.win, start=(0, -virt_leng), end=(0, virt_leng), units='cm')
+        horz_line = visual.Line(self.win, start=(-horz_leng, 0), end=(horz_leng, 0), units='cm', lineColor='black', lineWidth=3)
+        virt_line = visual.Line(self.win, start=(0, -virt_leng), end=(0, virt_leng), units='cm', lineColor='black', lineWidth=3)
 
         # DISPLAY HORIZONTAL LINE
         horz_line.draw()
@@ -324,6 +333,9 @@ class Experiment(object):
 
         self.fixation, self.back_mask, self.prime, self.forward_mask, self.target = stimulus_generator()
 
+        # CREATE TRIAL KEYBOARD:
+        trial_kb = keyboard.Keyboard(waitForStart=True)
+
         # LOAD PRIME-TARGET DATAFRAME:
         if order == 'first':
             prime_target_df = self.first_sequence
@@ -346,8 +358,11 @@ class Experiment(object):
         # LOAD MASK DATA FRAME
         mask_df = self.mask_df
 
-        # RECORD DATA TRIALS
-        trials_data = pd.DataFrame(columns=['prime', 'target', 'class', 'pair_index', 'mask', 'key_name', 'correct', 'key_rt', 'key_tDown', 'bm_dur', 'prime_dur', 'fm_dur', 'target_dur', 'frame_duration'])
+        # CREATE TRIALS DATA FRAME
+        trials_data = pd.DataFrame(columns=['prime', 'target', 'class', 'pair_index', 'mask',
+        'key_name', 'correct', 'key_rt', 'key_tDown',
+        'fixation_dur', 'bm_dur', 'prime_dur', 'fm_dur', 'target_dur'])
+
         columns_trial = list(trials_data.columns)
 
         # EXPERIMENT LOOP
@@ -364,49 +379,74 @@ class Experiment(object):
             # RESET MONITOR CLOCK
             self.monitorclock.reset()
 
+            # RESET RECORD FRAME REFRESH INTERVAL
+
+
+
+
+            frame_rate = self.win.getActualFrameRate(10, 40, 0, 1)
             # TRIAL LOOP
+            self.win.flip()
             for frameN in np.arange(total_duration_f + 1):
+
+                # FIXATION DRAW
                 if frameN < fixation_end:
                     self.fixation.draw()
+
+                # BACK MASK DRAW
                 elif frameN == fixation_end:
                     back_mask_onset = self.monitorclock.getTime()
                     self.back_mask.draw()
+                    
                 elif frameN < back_mask_end:
                     self.back_mask.draw()
+
+                # PRIME DRAW
                 elif frameN == back_mask_end:
                     prime_onset = self.monitorclock.getTime()
-                    self.prime.draw()
+                    self.prime.draw()                    
                 elif frameN < prime_end:
                     self.prime.draw()
+
+                # FORWARD MASK DRAW
                 elif frameN == prime_end:
                     forward_mask_onset = self.monitorclock.getTime()
                     self.forward_mask.draw()
                 elif frameN < forward_mask_end:
                     self.forward_mask.draw()
+
+                # TARGET DRAW AND RESPONSE COLLECT
                 else:
-                    got_keypress = False
+                    # DRAW TARGET, GET TARGET ONSET, FPS AND START FRAME COUNT
                     target_onset = self.monitorclock.getTime()
                     self.target.draw()
-                    self.kb.clock.reset()
-                    self.kb.start()
-                    while not got_keypress:
-                        self.target.draw()
-                        key = self.kb.getKeys(keyList=('z', 'm'))
-                        if key:
-                            got_keypress = True
-                            self.kb.stop()
+
+                    # START KB AND RESET KB CLOCK
+                    trial_kb.start(), trial_kb.clock.reset()
+
+                    # REDRAW TARGET LOOP, WAIT FOR KEY
+                    while True:
                         self.win.flip()
+                        self.target.draw()
+                        key = trial_kb.getKeys(keyList=('z', 'm'))
+                        if key:
+                            self.win.flip()
+                            target_time_end = self.monitorclock.getTime()
+                            trial_kb.stop()
+                            break
 
                     # COLLECT TRIAL DATA
-                    frame_dur = self.win.getActualFrameRate(10, 40, 0, 1)
+
 
                     time_data = {
-                        'back_mask_dur' : back_mask_onset,
-                        'prime_dur' : prime_onset - back_mask_onset,
-                        'forward_mask_dur' : forward_mask_onset - prime_onset,
-                        'target_dur' : target_onset - forward_mask_onset
+                        'fixation_dur' : back_mask_onset,
+                        'back_mask_dur' : prime_onset - back_mask_onset,
+                        'prime_dur' : forward_mask_onset - prime_onset,
+                        'forward_mask_dur' : target_onset - forward_mask_onset,
+                        'target_dur' : target_time_end - target_onset
                     }
 
+                    # UPDATE TRIALS DATA FRAME
                     trials_data = trials_data.append({
                         columns_trial[0] : self.prime.text,
                         columns_trial[1] : self.target.text,
@@ -417,11 +457,11 @@ class Experiment(object):
                         columns_trial[6] : None,
                         columns_trial[7] : key[0].rt,
                         columns_trial[8] : key[0].tDown, 
-                        columns_trial[9] : time_data['back_mask_dur'],
-                        columns_trial[10] : time_data['prime_dur'],
-                        columns_trial[11] : time_data['forward_mask_dur'],
-                        columns_trial[12] : time_data['target_dur'],
-                        columns_trial[13] : frame_dur
+                        columns_trial[9] : time_data['fixation_dur'],
+                        columns_trial[10] : time_data['back_mask_dur'],
+                        columns_trial[11] : time_data['prime_dur'],
+                        columns_trial[12] : time_data['forward_mask_dur'],
+                        columns_trial[13] : time_data['target_dur'],
                         }, ignore_index=True)
 
                 self.win.flip()
@@ -439,34 +479,48 @@ class Experiment(object):
                 correct_list.append(False)
         trials_data['correct'] = correct_list
 
+        # SHOW REFRESH FRAME INTERVALS
+
         return trials_data
 
     def startExperiment(self, full, save=False):
         if self.fullcross:
             data_first_trial = self.startTrial('first', full)
+
+            # REMEMBER OF DELETE LOOP
+            while True:
+                try:
+                    value_horz = str(input('Are you ready for the next stage? '))
+                    break
+                except value_horz == 'no':
+                    print('Are you ready for the next stage now? ')
+    
             data_second_trial = self.startTrial('second', full)
             data_trial_final = data_first_trial.append(data_second_trial).reset_index(drop=True)
             if save:
-                data_trial_final.to_csv('subject-{}'.format(self.subject_n))
+                data_trial_final.to_csv(r'.\trials_data\subject-{}.csv'.format(self.subject_n))
                 return data_trial_final
             else:
                 return data_trial_final
         else:
             data_trial = self.startTrial('first', full)
             if save:
-                data_trial_final.to_csv('subject-{}.csv'.format(self.subject_n))
+                data_trial_final.to_csv(r'.\trials_data\subject-{}.csv'.format(self.subject_n))
                 return data_trial_final
             else:
                 return data_trial_final
 
-# test = Experiment(4, useDisplay=True)
-# print(test.startExperiment(False))
-# print(test.kb_key_response)
-# test.startTrial()
-# print(test.first_sequence, test.second_sequence)
-# print(len(test.mask_list))
-# test.confirmDisplaySet()
-# print(test.startTrial(order='first', full=False))
+# TEST AREA
 
-# with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(test.first_sequence, test.second_sequence)
+# test = Experiment(2, useDisplay=True)
+# print(test.startTrial('first', False))
+# print(test.startExperiment(True, True))
+
+# with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(test.startExperiment(False, False))
+
+#################################################################################################################################################################################
+
+
+
+
 
