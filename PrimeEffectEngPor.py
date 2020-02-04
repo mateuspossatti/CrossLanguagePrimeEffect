@@ -520,7 +520,7 @@ class Experiment(object):
 
 #################################################################################################################################################################################
 
-class StastiticalAnalysis():
+class StatiticalAnalysis():
     def __init__(self, n):
         self.subject_df = pd.read_csv(r'.\trials_data\subject-{}.csv'.format(n))
 
@@ -529,13 +529,13 @@ class StastiticalAnalysis():
 
         # GROUP CONDITIONAL
         if not group:
-            data = data['key_rt'].values
+            data = data['respose_time'].values
             q1, q3 = np.percentile(data, [25, 75])
             lower_bound = q1 -(1.5*(q3 - q1))
             upper_bound = q3 +(1.5*(q3 - q1))
             return lower_bound, upper_bound
         else:
-            data = data[data['group'] == group]['key_rt']
+            data = data[data['group'] == group]['respose_time']
             q1, q3 = np.percentile(data, [25, 75])
             lower_bound = q1 -(1.5*(q3 - q1))
             upper_bound = q3 +(1.5*(q3 - q1))
