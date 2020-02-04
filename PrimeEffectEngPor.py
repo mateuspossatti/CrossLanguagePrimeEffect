@@ -520,6 +520,63 @@ class Experiment(object):
 
 #################################################################################################################################################################################
 
+class StastiticalAnalysis():
+    def __init__(self, n):
+        self.subject_df = pd.read_csv(r'.\trials_data\subject-{}.csv'.format(n))
+
+    def interquartile(self, group=False):
+        data = self.subject_df
+
+        # GROUP CONDITIONAL
+        if not group:
+            data = data['key_rt'].values
+            q1, q3 = np.percentile(data, [25, 75])
+            lower_bound = q1 -(1.5*(q3 - q1))
+            upper_bound = q3 +(1.5*(q3 - q1))
+            return lower_bound, upper_bound
+        else:
+            data = data[data['group'] == group]['key_rt']
+            q1, q3 = np.percentile(data, [25, 75])
+            lower_bound = q1 -(1.5*(q3 - q1))
+            upper_bound = q3 +(1.5*(q3 - q1))
+            return lower_bound, upper_bound
+
+    def remove_outliers(self, group=None, df=None):
+        data = ''
+        if df is None:
+            data = self.data
+        else:
+            data=df
+        n = 0
+        if group is None:
+            resp_time = data['response_time'].values
+            bol = []
+            lower, upper = self.interquartile()
+            for i in range(len(resp_time)):
+                if resp_time[i] < lower or resp_time[i] > upper:
+                    n += 1
+                    bol.append(False)
+                else:
+                    bol.append(True)
+            data = data[bol]
+            if n > 0:
+                print('{} outliers removed'.format(n))
+            return data.reset_index(drop=True)
+        else:
+            bol = []            
+            lower, upper = self.interquartile(group=group, df=data)
+            for i in range(data.shape[0]):
+                if data['group'][i] != group:
+                    bol.append(True)
+                elif data['response_time'][i] < lower or data['response_time'][i] > upper:
+                    n += 1
+                    bol.append(False)
+                else:
+                    bol.append(True)
+            data = data[bol]
+            if n > 0:
+                print('{}: {} outliers removed'.format(group, n))
+            return data.reset_index(drop=True)
 
 
 
