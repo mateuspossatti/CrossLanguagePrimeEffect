@@ -27,5 +27,20 @@ import numpy as np
 # print(por_cor/150, eng_cor/150)
 # print(df.columns)
 
-# df.to_csv(r'.\trials_data\subject-2.csv')
 
+
+df = pd.read_csv(r'.\trials_data\subject-10.csv', index_col=0)
+
+bol = []
+
+for i in range(df.shape[0]):
+    if df['response_time'][i] <= 0:
+        bol.append(False)
+    else:
+        bol.append(True)
+
+df = df[bol].reset_index(drop=True)
+
+with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(df)
+
+# df.to_csv(r'.\trials_data\subject-10.csv')

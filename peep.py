@@ -21,6 +21,8 @@ class Experiment(object):
         """:Parameters:
         fullcross will ditermine if the effect will be studied in the two ways. 
         """
+
+        # QUESTION THE USER WHAT IS THE VOLUNTEER'S NUMBER
         if n is None:
             while True:
                 try:
@@ -29,6 +31,7 @@ class Experiment(object):
                 except ValueError:
                     print("Oops!  That was no valid number.  Try again...")
 
+        # QUESTION THE USER ABOUT HIS FULLSCREEN PREFERENCE
         if fullscreen is None:
             while True:
                 fs = str(input('Do you want that the trial be in fullscreen?\n(y/n): ')).lower()
@@ -109,7 +112,7 @@ class Experiment(object):
 
         self.frame_paradigm = frame_duration()
 
-        # Generators
+        # GENERATORS
         def clock_generator():
             monitorclock = clock.Clock()
             return monitorclock
@@ -121,7 +124,8 @@ class Experiment(object):
 
             return kb
 
-        self.kb = hardware_generator()
+        ######## VERIFY THE IMPORTANCE OF THE KEYBOARD BELLOW
+        # self.kb = hardware_generator()
 
         def mask_generator(mask_char=None, total=None, mask_size=None):
             if mask_char == None:
@@ -261,12 +265,13 @@ class Experiment(object):
 
         self.first_sequence, self.second_sequence = words_sequence()
 
+        # QUESTION THE USER IF HIS WANT TO START THE EXPERIMENT
         while True:
             startexp = str(input('Do you want to begin the expriment?\n(y/n): ')).lower()
             if startexp != 'y' and startexp != 'n':
                 print('The command typed ("{}") is invalid, please type "y" to begin the experiment\nor "n" to continue without begin the experiment.'.format(startexp))
             elif startexp == 'y':
-                self.data_trial_final = self.startExperiment(save)
+                self.data_trial_final = self.startExperiment(save=save)
                 break
             else:
                 try:
@@ -426,17 +431,11 @@ class Experiment(object):
             # DATA VARIABLES
             tClass, pair_index = prime_target_df[columns_pt[3]][trialN], prime_target_df[columns_pt[4]][trialN]
 
+            frame_rate = self.win.getActualFrameRate(10, 40, 0, 1)
+
             # RESET MONITOR CLOCK
             self.monitorclock.reset()
 
-            # RESET RECORD FRAME REFRESH INTERVAL
-
-
-
-
-            frame_rate = self.win.getActualFrameRate(10, 40, 0, 1)
-            # TRIAL LOOP
-            self.win.flip()
             for frameN in np.arange(total_duration_f + 1):
 
                 # FIXATION DRAW
@@ -481,8 +480,8 @@ class Experiment(object):
                         key = trial_kb.getKeys(keyList=('z', 'm'))
                         if key:
                             self.win.flip()
-                            target_time_end = self.monitorclock.getTime()
                             trial_kb.stop()
+                            target_time_end = self.monitorclock.getTime()
                             break
 
                     # COLLECT TRIAL DATA
@@ -533,7 +532,34 @@ class Experiment(object):
         return trials_data
 
     def startExperiment(self, full=None, save=None):
-        # SET FULL
+        # QUESTION THE USER IF HE WANT TO SAVE THE DATA THAT WILL BE COLLECTED 
+        if save is None:
+            while True:
+                save_first = str(input('Do you want to save the data from the experiment? (y/n)\n')).lower()
+
+                # IF "N" THAN QUESTION AGAIN IF THE USER ARE CERTAIN ABOUT HIS DECISION
+                if save_first == 'n':
+                    while True:
+                        save_again = str(input("""Are you certain that you DON'T WANT TO SAVE the data that will be collected?\nIf you WANT TO SAVE the data type "y".\nIf you DON'T WANT TO SAVE type "n".\n(y/n): """)).lower()
+                        if save_again == 'y':
+                            save = True
+                            break
+                        elif save_again == 'n':
+                            save = False
+                            break
+                        else:
+                            print('The command typed is not valid, please answer with "y" to save or "n" to not save.\nYour answer was: "{}"'.format(save))
+
+                    # BREAK OF THE OUTER LOOP
+                    break
+
+                elif save_first == 'y':
+                    save = True
+                    break
+                else:
+                    print('The command typed is not valid, please answer with "y" to save or "n" to not save.\nYour answer was: "{}"'.format(save))
+
+        # QUESTION THE USER IF HE WANT TO EXECUTE THE FULL EXPERIMENT
         if full is None:
             while True:
                 full = str(input('Do you want to do the full experiment? (y/n)\n')).lower()
@@ -546,19 +572,8 @@ class Experiment(object):
                 else:
                     print('The command typed is not valid, please answer with "y" to do the full expriment\nor "n" to do a partial experiment.\nYour answer was: "{}"'.format(save))
 
-        # SET SAVE
-        if save is None:
-            while True:
-                save = str(input('Do you want to save the data from the experiment? (y/n)\n')).lower()
-                if save == 'n':
-                    save = False
-                    break
-                elif save == 'y':
-                    save = True
-                    break
-                else:
-                    print('The command typed is not valid, please answer with "y" to save or "n" to not save.\nYour answer was: "{}"'.format(save))
 
+        # IF THE EXPERIMENT IS SET TO FULLCROSS THAN
         if self.fullcross:
             data_first_trial = self.startTrial('first', full)
 
@@ -736,10 +751,11 @@ class Experiment(object):
 
                 return data_trial_final
 
-# test = Experiment(n=4, save=False).confirmDisplaySet()
-Experiment()
+test = Experiment()
+# print(test)
+# Experiment()
 
-#################################################################################################################################################################################
+##############################################################################################################################################################################
 
 class StatisticalAnalysis():
     def __init__(self, n=None, columns=None, save=None, view_data=None):
@@ -754,6 +770,7 @@ class StatisticalAnalysis():
 
         self.subject_n = n
 
+        # VERIFY IF A FILE WITH THE SAME NAME ALREADY EXIST. IF IT'S NIETHER PREPROCESS DATA OR SAVE WILL BE EXECUTED
         try:
             self.full_preprocess_data = pd.read_csv(r'.\trials_data\subject-{}-norm.csv'.format(n), index_col=0)
             preprocess_data = False
@@ -766,8 +783,9 @@ class StatisticalAnalysis():
             if columns is None:
                 columns = ['response_time', 'group', 'correct', 'pair_index', 'l1_l2'] 
             
-            self.subject_df = self.subject_raw_df[columns]
-            self.subject_df['response_time'] = np.around(np.array((self.subject_df['response_time'].values) * 1000), 2)
+            subject_df = self.subject_raw_df[columns]
+            subject_df['response_time'] = np.around(np.array((subject_df['response_time'].values) * 1000), 2)
+            self.subject_df = subject_df
 
             self.full_preprocess_data = self.full_preprocess()
 
@@ -826,10 +844,24 @@ class StatisticalAnalysis():
             upper_bound = q3 +(1.5*(q3 - q1))
             return lower_bound, upper_bound
         else:
-            data = data[data['group'] == group]['response_time']
-            q1, q3 = np.percentile(data, [25, 75])
-            lower_bound = q1 -(1.5*(q3 - q1))
-            upper_bound = q3 +(1.5*(q3 - q1))
+            l1_l2 = ['PorEng', 'EngPor']
+            lower_bound = {
+                l1_l2[0] : None,
+                l1_l2[1] : None
+                }
+            upper_bound = {
+                l1_l2[0] : None,
+                l1_l2[1] : None
+                }
+
+            for langPair in l1_l2:
+                data_onel = data[data['l1_l2'] == langPair]
+                data_onel = data_onel[data_onel['group'] == group]['response_time']
+                print(data_onel)
+                q1, q3 = np.percentile(data_onel, [25, 75])
+                lower_bound[langPair] = np.around((q1-(1.5*(q3-q1))), 2)
+                upper_bound[langPair] = np.around((q3+(1.5*(q3-q1))), 2)
+
             return lower_bound, upper_bound
 
     def remove_outliers(self, group=None, df=None):
@@ -859,21 +891,34 @@ class StatisticalAnalysis():
             return data.reset_index(drop=True)
 
         else:
-            bol = []            
+            bol = []
+            l1_l2 = ['PorEng', 'EngPor']
             lower, upper = self.interquartile(df=data, group=group)
+            n_l0 = 0
+            n_l1 = 0
             for i in range(data.shape[0]):
-                if data['group'][i] != group:
-                    bol.append(True)
-                elif data['response_time'][i] < lower or data['response_time'][i] > upper:
-                    n += 1
-                    bol.append(False)
+                if data['l1_l2'][i] == l1_l2[0]:
+                    if data['group'][i] != group:
+                        bol.append(True)
+                    elif data['response_time'][i] < lower[l1_l2[0]] or data['response_time'][i] > upper[l1_l2[0]]:
+                        n_l0 += 1
+                        bol.append(False)
+                    else:
+                        bol.append(True)
                 else:
-                    bol.append(True)
+                    if data['group'][i] != group:
+                        bol.append(True)
+                    elif data['response_time'][i] < lower[l1_l2[1]] or data['response_time'][i] > upper[l1_l2[1]]:
+                        n_l1 += 1
+                        bol.append(False)
+                    else:
+                        bol.append(True)
 
             data = data[bol]
 
-            if n > 0:
-                print('{}: {} outliers removed'.format(group, n))
+            if n_l0 > 0 or n_l1 > 0:
+                print('{group}: {n_l0} outliers removed from {l0} pairs and {n_l1} outliers removed from {l1} pairs.'.format(group=group,
+                n_l0=n_l0, n_l1=n_l1, l0=l1_l2[0], l1=l1_l2[1]))
 
             return data.reset_index(drop=True)
 
@@ -884,27 +929,44 @@ class StatisticalAnalysis():
 
         data = df
 
-        n, cong, incong, control = (0, 0, 0, 0)
+        n_l0, cong_l0, incong_l0, control_l0, n_l1, cong_l1, incong_l1, control_l1 = (0, 0, 0, 0, 0, 0, 0, 0)
+
+        l1_l2 = ['PorEng', 'EngPor']
 
         bol = []
         for i in range(data.shape[0]):
             if data['correct'][i] == True:
                 bol.append(True)
+
             else:
                 bol.append(False)
-                n += 1
-                if data['group'][i] == 'congruent':
-                    cong += 1
-                elif data['group'][i] == 'incongruent':
-                    incong += 1
+                if data['l1_l2'][i] == l1_l2[0]:
+                    n_l0 += 1
+                    if data['group'][i] == 'congruent':
+                        cong_l0 += 1
+                    elif data['group'][i] == 'incongruent':
+                        incong_l0 += 1
+                    else:
+                        control_l0 += 1
                 else:
-                    control += 1
+                    n_l1 += 1
+                    if data['group'][i] == 'congruent':
+                        cong_l1 += 1
+                    elif data['group'][i] == 'incongruent':
+                        incong_l1 += 1
+                    else:
+                        control_l1 += 1
 
         data = data[bol]
 
-        if n > 0: 
-            print('{} errors removed'.format(n))
-            print('congruent: {cong}, incongruent: {incong}, control: {control}.'.format(cong=cong, incong=incong, control=control))
+        if n_l0 > 0 or n_l1 > 0: 
+            # PRINT PORENG ERRORS
+            print('{n_l0} errors removed from {l0} pairs.'.format(n_l0=n_l0, l0=l1_l2[0]))
+            print('congruent: {cong_l0}, incongruent: {incong_l0}, control: {control_l0}.'.format(cong_l0=cong_l0, incong_l0=incong_l0, control_l0=control_l0))
+
+            # PRINT ENGPOR ERRORS
+            print('{n_l1} errors removed from {l1} pairs.'.format(n_l1=n_l1, l1=l1_l2[1]))
+            print('congruent: {cong_l1}, incongruent: {incong_l1}, control: {control_l1}.'.format(cong_l1=cong_l1, incong_l1=incong_l1, control_l1=control_l1))
     
         return data.reset_index(drop=True)
 
@@ -1002,11 +1064,12 @@ class StatisticalAnalysis():
                 else:
                     data.to_csv(r'.\trials_data\subject-{}-norm.csv'.format(self.subject_n))
                     print('The data was saved successfully on the file named "subject-{}-norm.csv" in the "trials_data" directory.'.format(self.subject_n))
+                    return
 
         except FileNotFoundError:
             data.to_csv(r'.\trials_data\subject-{}-norm.csv'.format(self.subject_n))
             print('The data was saved successfully on the file named "subject-{}-norm.csv" in the "trials_data" directory.'.format(self.subject_n))
-            pass
+            return
 
     def plotdata(self, first_hue='group', second_hue='l1_l2',  df=None):
         if df is None:
@@ -1046,6 +1109,6 @@ class StatisticalAnalysis():
         fig, axis = self.fig, self.axis
         plt.show()
 
-# sa = StatisticalAnalysis()
-# sa.save()
+# sa = StatisticalAnalysis(n=10, save=None, view_data=None)
+# print(sa.remove_errors(df=sa.subject_df))
 # with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(StatisticalAnalysis(n=6, save=False).full_preprocess_data)
