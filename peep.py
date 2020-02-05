@@ -750,7 +750,7 @@ class Experiment(object):
 
                 return data_trial_final
 
-test = Experiment()
+# test = Experiment()
 # print(test)
 # Experiment()
 
@@ -814,19 +814,76 @@ class StatisticalAnalysis():
                 else:
                     break
 
-            if vd == 'y':
+            # IF THE USER DON'T WANT TO SHOW GRAPHS THAN RAISE A QUESTION ABOUT PRINT OUT THE DATA
+            if vd == 'n':
+                # QUESTION ABOUT PRINT DATA
+                while True:
+                    vdf = str(input('Do you want to print out the normalized dataframe? (y/n)\n')).lower()
+                    # INVALID COMMAND
+                    if vdf != 'y' and vdf != 'n':
+                        print('Oops!  Your reponse "{}" was not valid. Please type "y" to print out the normalized dataframe\nor "n" to continue without print out.'.format(vdf))
+                        pass
+                    # WANT TO PRINT
+                    elif vdf == 'y':
+                        with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(self.full_preprocess_data)
+                        return
+                    # DON'T WANT TO PRINT
+                    else:
+                        return
+
+            # IF VD IS "Y" THAN CALL VIEW_DATA()
+            else:
                 self.view_data()
 
-            while True:
-                vdf = str(input('Do you want to print out the normalized data frame? (y/n)\n')).lower()
-                if vdf != 'y' and vdf != 'n':
-                    print('Oops!  Your reponse "{}" was not valid. Please type "y" to print out the normalized data frame\nor "n" to continue without print out.'.format(vdf))
-                    pass
-                else:
-                    break
+                # QUESTION ABOUT PRINT DATA
+                while True:
+                    vdf = str(input('Do you want to print out the normalized dataframe? (y/n)\n')).lower()
+                    # INVALID COMMAND
+                    if vdf != 'y' and vdf != 'n':
+                        print('Oops!  Your reponse "{}" was not valid. Please type "y" to print out the normalized dataframe\nor "n" to continue without print out.'.format(vdf))
+                        pass
+                    # WANT TO PRINT
+                    elif vdf == 'y':
+                        with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(self.full_preprocess_data)
+                        return
+                    # DON'T WANT TO PRINT
+                    else:
+                        return
 
-            if vdf == 'y':
-                with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(self.full_preprocess_data)
+        # ELSE: VIEW_DATA IS NOT NONE
+        else:
+            if view_data:
+                self.view_data()
+
+                # QUESTION ABOUT PRINT DATA
+                while True:
+                    vdf = str(input('Do you want to print out the normalized dataframe? (y/n)\n')).lower()
+                    # INVALID COMMAND
+                    if vdf != 'y' and vdf != 'n':
+                        print('Oops!  Your reponse "{}" was not valid. Please type "y" to print out the normalized dataframe\nor "n" to continue without print out.'.format(vdf))
+                        pass
+                    # WANT TO PRINT
+                    elif vdf == 'y':
+                        with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(self.full_preprocess_data)
+                        return
+                    # DON'T WANT TO PRINT
+                    else:
+                        return
+            else:
+                # QUESTION ABOUT PRINT DATA
+                while True:
+                    vdf = str(input('Do you want to print out the normalized dataframe? (y/n)\n')).lower()
+                    # INVALID COMMAND
+                    if vdf != 'y' and vdf != 'n':
+                        print('Oops!  Your reponse "{}" was not valid. Please type "y" to print out the normalized dataframe\nor "n" to continue without print out.'.format(vdf))
+                        pass
+                    # WANT TO PRINT
+                    elif vdf == 'y':
+                        with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(self.full_preprocess_data)
+                        return
+                    # DON'T WANT TO PRINT
+                    else:
+                        return
 
     def interquartile(self, group=None, df=None):
         # IF THERE'S NO DF THAN RETURN NONE
@@ -1077,14 +1134,20 @@ class StatisticalAnalysis():
             data = df
 
         sequence = ['incongruent', 'congruent', 'control']
+        l1_l2 = ['PorEng', 'EngPor']
 
         fig, axes = plt.subplots(2, 2, figsize=(16, 16), squeeze=True)
 
-        sns.catplot(data=data, x=first_hue, y='z_score_norm', ax=axes[0, 0], order=sequence, kind='box')
+        dataPorEng = data[data['l1_l2'] == l1_l2[0]]
+        sns.catplot(data=dataPorEng, x=first_hue, y='z_score_norm', ax=axes[0, 0], order=sequence, kind='box')
         axes[0, 0].grid(axis='y', which='major')
 
-        sns.violinplot(data=data, x=first_hue, y='response_time', hue=second_hue, split=True, ax=axes[0, 1], order=sequence, legend=False)
+        dataEngPor = data[data['l1_l2'] == l1_l2[1]]
+        sns.catplot(data=dataEngPor, x=first_hue, y='z_score_norm', ax=axes[0, 1], order=sequence, kind='box')
         axes[0, 1].grid(axis='y', which='major')
+
+        sns.violinplot(data=data, x=first_hue, y='response_time', hue=second_hue, split=True, ax=axes[1, 1], order=sequence, legend=False)
+        axes[1, 1].grid(axis='y', which='major')
 
 
         sns.kdeplot(data[data[first_hue] == 'control']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='g')
@@ -1098,9 +1161,9 @@ class StatisticalAnalysis():
         axes[1, 0].axvline(np.median(data[data[first_hue] == 'congruent']['response_time']), alpha=.8, ymax=.5, c='tab:orange')
         axes[1, 0].legend(['control', 'incongruent', 'congruent'])
 
-        cong = data[data['group'] == 'congruent']
-        sns.distplot(cong['response_time'], ax=axes[1, 1], color='tab:orange')
-        axes[1, 1].grid(axis='y', which='major')
+        # cong = data[data['group'] == 'congruent']
+        # sns.distplot(cong['response_time'], ax=axes[1, 1], color='tab:orange')
+        # axes[1, 1].grid(axis='y', which='major')
 
         return fig, axes
 
@@ -1108,6 +1171,6 @@ class StatisticalAnalysis():
         fig, axis = self.fig, self.axis
         plt.show()
 
-# sa = StatisticalAnalysis(n=10, save=None, view_data=None)
+# sa = StatisticalAnalysis(n=11, save=None, view_data=True)
 # print(sa.remove_errors(df=sa.subject_df))
 # with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(StatisticalAnalysis(n=6, save=False).full_preprocess_data)
