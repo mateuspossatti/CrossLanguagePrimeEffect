@@ -4,10 +4,12 @@ import pandas as pd
 import numpy as np
 import pip
 
+import keyboard_mod as keyboard
+
 # TRY IMPORT PSYCHOPY MODULE
 try:
     from psychopy import visual, core, monitors, event, clock
-    from psychopy.hardware import keyboard, emulator
+    # from psychopy.hardware import keyboard_mod as keyboard, emulator
 except ImportError:
     import pip
     pip.main(['install', 'psychopy'])
@@ -21,28 +23,17 @@ class Experiment(object):
         """:Parameters:
         fullcross will ditermine if the effect will be studied in the two ways. 
         """
-
-        # QUESTION THE USER WHAT IS THE VOLUNTEER'S NUMBER
+# QUESTION THE USER ABOUT THE VOLUNTEER NUMBER IF IT ISN'T ALREADY DECLARE
         if n is None:
             while True:
                 try:
                     n = int(input('Please enter the number of the volunteer: '))
                     break
+
                 except ValueError:
                     print("Oops!  That was no valid number.  Try again...")
 
-        # QUESTION THE USER ABOUT HIS FULLSCREEN PREFERENCE
-        if fullscreen is None:
-            while True:
-                fs = str(input('Do you want that the trial be in fullscreen?\n(y/n): ')).lower()
-                if fs != 'y' and fs != 'n':
-                    print('The command typed ("{}") is invalid, please type "y" to make the experiment fullscreen\nor "n" to not make the experiment fullscreen'.format(fs))
-                    pass
-                elif fs == 'y':
-                    self.fullscreen = True
-                else:
-                    self.fullscreen = False                    
-
+# DEFINE ATTRIBUTES BASED ON CODITIONAL STATEMENTS
         if mask_case == 'upper':
             self.mask_char = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
         elif mask_case == 'lower':
@@ -95,7 +86,7 @@ class Experiment(object):
 
         self.language_order, self.kb_key_response = subject_experiment_order() 
 
-# CREATE MONITOR AND WINDOW
+# CREATE MONITOR
         def set_monitor():
             mon = monitors.Monitor(monitor_name)
 
@@ -114,7 +105,7 @@ class Experiment(object):
 
         self.frame_paradigm = frame_duration()
 
-#  GENERATE CLOCK AND KEYBOARD
+# GENERATE CLOCK AND KEYBOARD
         def clock_generator():
             monitorclock = clock.Clock()
             return monitorclock
@@ -125,6 +116,8 @@ class Experiment(object):
             kb = keyboard.Keyboard(waitForStart=True)
 
             return kb
+
+        self.kb = hardware_generator()
 
         def mask_generator(mask_char=None, total=None, mask_size=None):
             if mask_char == None:
@@ -270,18 +263,36 @@ class Experiment(object):
             startexp = str(input('Do you want to begin the expriment?\n(y/n): ')).lower()
             if startexp != 'y' and startexp != 'n':
                 print('The command typed ("{}") is invalid, please type "y" to begin the experiment\nor "n" to continue without begin the experiment.'.format(startexp))
+            
+            # THE USER WANT TO BEGIN THE EXPERIMENT
             elif startexp == 'y':
+
+                # QUESTION THE USER ABOUT HIS FULLSCREEN PREFERENCE
+                if fullscreen is None:
+                    while True:
+                        fs = str(input('Do you want to run the experiment in fullscreen?\n(y/n): ')).lower()
+                        if fs != 'y' and fs != 'n':
+                            print('The command typed ("{}") is invalid, please type "y" to make the experiment fullscreen\nor "n" to not make the experiment fullscreen'.format(fs))
+                            pass
+                        elif fs == 'y':
+                            self.fullscreen = True
+                            break
+                        else:
+                            self.fullscreen = False
+                            break
+
                 self.data_trial_final = self.startExperiment(save=save)
-                break
+                return
+
+            # THE USER DON'T WANT TO BEGIN THE EXPERIMENT
             else:
                 try:
                     self.win.close()
-                    break
+                    return
                 except AttributeError:
-                    break
+                    return
 
-
-##############################################################################################################################################
+############# END OF __INIT__() #################
 
     def set_window(self):
         if self.fullscreen:
@@ -375,7 +386,7 @@ class Experiment(object):
         self.fixation, self.back_mask, self.prime, self.forward_mask, self.target = stimulus_generator()
 
         # CREATE TRIAL KEYBOARD:
-        trial_kb = keyboard.Keyboard(waitForStart=True)
+        trial_kb = keyboard.Keyboard(waitForStart=False)
 
         # CREATE L1_L2 VARIABLE AND LOAD PRIME-TARGET SEQUENCE
         language_order = self.language_order.split('-')
@@ -464,32 +475,30 @@ class Experiment(object):
                 elif frameN < forward_mask_end:
                     self.forward_mask.draw()
 
-                # TARGET DRAW AND RESPONSE COLLECT
                 else:
                     # DRAW TARGET
                     self.target.draw()
 
-                    # START KB AND RESET KB CLOCK AND TARGET ONSET
+                    # RESET KB CLOCK AND DEFINE TARGET ONSET
+                    trial_kb.clock.reset()
                     target_onset = self.monitorclock.getTime()
-                    trial_kb.start(), trial_kb.clock.reset()
 
-                    # REDRAW TARGET LOOP, WAIT FOR KEY
-                    while True:
-                        self.win.flip()
-                        self.target.draw()
-                        key = trial_kb.getKeys(keyList=('z', 'm'))
-                        if key:
-                            target_time_end = self.monitorclock.getTime()
-                            trial_kb.stop()
-                            break
+                    # REDRAW TARGET LOOP AND WAIT FOR KEY
+                    key = trial_kb.waitKeys(keyList=('z', 'm'), stimDraw=self.target)
+                    target_time_end = self.monitorclock.getTime()
+
+                    # VERIFY THE CONTENT OF KEY
+                    if key is None:
+                        print("The key variable is equal to None")
+                        key.name, key.rt, key.tDown = (None, None, None)
 
                     # COLLECT TRIAL DATA
-
-
                     time_data = {
                         'fixation_dur' : back_mask_onset,
                         'back_mask_dur' : prime_onset - back_mask_onset,
-                        'prime_dur' : forward_mask_onset - prime_onset,
+                        'prime_dur'
+
+                         : forward_mask_onset - prime_onset,
                         'forward_mask_dur' : target_onset - forward_mask_onset,
                         'target_dur' : target_time_end - target_onset
                     }
@@ -502,10 +511,10 @@ class Experiment(object):
                         columns_trial[3] : pair_index,
                         columns_trial[4] : self.back_mask.text,
                         columns_trial[5] : l1_l2,
-                        columns_trial[6] : key[-1].name,
+                        columns_trial[6] : key.name,
                         columns_trial[7] : None,
-                        columns_trial[8] : key[-1].rt,
-                        columns_trial[9] : key[-1].tDown, 
+                        columns_trial[8] : key.rt,
+                        columns_trial[9] : key.tDown, 
                         columns_trial[10] : time_data['fixation_dur'],
                         columns_trial[11] : time_data['back_mask_dur'],
                         columns_trial[12] : time_data['prime_dur'],
@@ -514,7 +523,7 @@ class Experiment(object):
                         }, ignore_index=True)
 
                 self.win.flip()
-            
+
             if not full:
                 if trialN >= limit - 1:
                     break 
@@ -752,7 +761,6 @@ class Experiment(object):
 
 test = Experiment()
 # print(test)
-# Experiment()
 
 ##############################################################################################################################################################################
 
