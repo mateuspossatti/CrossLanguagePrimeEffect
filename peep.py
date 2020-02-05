@@ -465,11 +465,11 @@ class Experiment(object):
 
                 # TARGET DRAW AND RESPONSE COLLECT
                 else:
-                    # DRAW TARGET, GET TARGET ONSET, FPS AND START FRAME COUNT
-                    target_onset = self.monitorclock.getTime()
+                    # DRAW TARGET
                     self.target.draw()
 
-                    # START KB AND RESET KB CLOCK
+                    # START KB AND RESET KB CLOCK AND TARGET ONSET
+                    target_onset = self.monitorclock.getTime()
                     trial_kb.start(), trial_kb.clock.reset()
 
                     # REDRAW TARGET LOOP, WAIT FOR KEY
@@ -478,9 +478,8 @@ class Experiment(object):
                         self.target.draw()
                         key = trial_kb.getKeys(keyList=('z', 'm'))
                         if key:
-                            self.win.flip()
-                            trial_kb.stop()
                             target_time_end = self.monitorclock.getTime()
+                            trial_kb.stop()
                             break
 
                     # COLLECT TRIAL DATA
@@ -502,10 +501,10 @@ class Experiment(object):
                         columns_trial[3] : pair_index,
                         columns_trial[4] : self.back_mask.text,
                         columns_trial[5] : l1_l2,
-                        columns_trial[6] : key[0].name,
+                        columns_trial[6] : key[-1].name,
                         columns_trial[7] : None,
-                        columns_trial[8] : key[0].rt,
-                        columns_trial[9] : key[0].tDown, 
+                        columns_trial[8] : key[-1].rt,
+                        columns_trial[9] : key[-1].tDown, 
                         columns_trial[10] : time_data['fixation_dur'],
                         columns_trial[11] : time_data['back_mask_dur'],
                         columns_trial[12] : time_data['prime_dur'],
@@ -750,7 +749,7 @@ class Experiment(object):
 
                 return data_trial_final
 
-# test = Experiment()
+test = Experiment()
 # print(test)
 # Experiment()
 
