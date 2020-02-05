@@ -7,7 +7,7 @@ import pip
 # TRY IMPORT PSYCHOPY MODULE
 try:
     from psychopy import visual, core, monitors, event, clock
-    from psychopy.hardware import keyboard
+    from psychopy.hardware import keyboard, emulator
 except ImportError:
     import pip
     pip.main(['install', 'psychopy'])
@@ -71,6 +71,7 @@ class Experiment(object):
         self.mask_size = mask_size
         self.fullscreen = fullscreen
         self.screen_hz = screen_hz
+        # self.em = emulator.ResponseEmulator(simResponses=[(0.2, 'z'), (0.4, 'z'), (0.3, 'm'), (0.6, 'm')])
 
 # DETERMINE LANGUAGE ORDER FOR THE ACTUAL SUBJECT
         def subject_experiment_order():
@@ -1138,11 +1139,11 @@ class StatisticalAnalysis():
         fig, axes = plt.subplots(2, 2, figsize=(16, 16), squeeze=True)
 
         dataPorEng = data[data['l1_l2'] == l1_l2[0]]
-        sns.catplot(data=dataPorEng, x=first_hue, y='z_score_norm', ax=axes[0, 0], order=sequence, kind='box')
+        sns.catplot(data=dataPorEng, x=first_hue, y='response_time', ax=axes[0, 0], order=sequence, kind='box')
         axes[0, 0].grid(axis='y', which='major')
 
         dataEngPor = data[data['l1_l2'] == l1_l2[1]]
-        sns.catplot(data=dataEngPor, x=first_hue, y='z_score_norm', ax=axes[0, 1], order=sequence, kind='box')
+        sns.catplot(data=dataEngPor, x=first_hue, y='response_time', ax=axes[0, 1], order=sequence, kind='box')
         axes[0, 1].grid(axis='y', which='major')
 
         sns.violinplot(data=data, x=first_hue, y='response_time', hue=second_hue, split=True, ax=axes[1, 1], order=sequence, legend=False)
