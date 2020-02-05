@@ -62,6 +62,7 @@ class Experiment(object):
         else:
             self.kb_keys = kb_keys
 
+# DEFINE THE OTHER ATTRIBUTES
         self.conditions = ['congruent', 'incongruent', 'control']
         self.subject_n = n
         self.pairs_n = pairs_n
@@ -71,7 +72,7 @@ class Experiment(object):
         self.fullscreen = fullscreen
         self.screen_hz = screen_hz
 
-        # DETERMINE LANGUAGE ORDER FOR THE ACTUAL SUBJECT
+# DETERMINE LANGUAGE ORDER FOR THE ACTUAL SUBJECT
         def subject_experiment_order():
             left, right = self.kb_keys
             if fullcross == True:
@@ -93,7 +94,7 @@ class Experiment(object):
 
         self.language_order, self.kb_key_response = subject_experiment_order() 
 
-        # CREATE MONITOR AND WINDOW
+# CREATE MONITOR AND WINDOW
         def set_monitor():
             mon = monitors.Monitor(monitor_name)
 
@@ -101,7 +102,7 @@ class Experiment(object):
 
         self.mon = set_monitor()
 
-        # DETERMINE FRAME DURATION:
+# DETERMINE FRAME DURATION:
         def frame_duration():
             ms_paradigm = self.timeparadigm
             screen_hz = self.screen_hz
@@ -112,7 +113,7 @@ class Experiment(object):
 
         self.frame_paradigm = frame_duration()
 
-        # GENERATORS
+#  GENERATE CLOCK AND KEYBOARD
         def clock_generator():
             monitorclock = clock.Clock()
             return monitorclock
@@ -123,9 +124,6 @@ class Experiment(object):
             kb = keyboard.Keyboard(waitForStart=True)
 
             return kb
-
-        ######## VERIFY THE IMPORTANCE OF THE KEYBOARD BELLOW
-        # self.kb = hardware_generator()
 
         def mask_generator(mask_char=None, total=None, mask_size=None):
             if mask_char == None:
@@ -143,6 +141,7 @@ class Experiment(object):
 
         self.mask_df = mask_generator()
 
+# DEFINE WORDS SEQUENCE
         def words_sequence():
             # LOAD CSV
             words_df = pd.read_csv(r'words.csv').columns
@@ -265,7 +264,7 @@ class Experiment(object):
 
         self.first_sequence, self.second_sequence = words_sequence()
 
-        # QUESTION THE USER IF HIS WANT TO START THE EXPERIMENT
+# QUESTION THE USER IF HIS WANT TO START THE EXPERIMENT
         while True:
             startexp = str(input('Do you want to begin the expriment?\n(y/n): ')).lower()
             if startexp != 'y' and startexp != 'n':
