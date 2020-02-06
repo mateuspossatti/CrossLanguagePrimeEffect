@@ -352,11 +352,6 @@ class Experiment(object):
         order must be a string with the position of the trial.
         order = ['first', 'second', 'third']
         """
-        # TRY TO CALL THE SELF.WIN, EXCEPT CREATE SELF.WIN
-        try:
-            self.win
-        except AttributeError:
-            self.win = self.set_window()
 
         # IF NOT FULL, CHOOSE THE NUMBER OF TRIALS
         if not full:
@@ -366,6 +361,14 @@ class Experiment(object):
                     break
                 except ValueError:
                     print("Oops!  That was no valid number.  Try again...")
+                    
+        # TRY TO CALL THE SELF.WIN, EXCEPT CREATE SELF.WIN
+        try:
+            self.win
+        except AttributeError:
+            self.win = self.set_window()
+
+
 
         # CREATE STIMULUS OBJECT
         def stimulus_generator():
@@ -433,6 +436,7 @@ class Experiment(object):
 
         # EXPERIMENT LOOP
         for trialN in np.arange(self.language_n): 
+
             # STIMULUS PREPARATION
             self.back_mask.text = mask_df['mask'][trialN]
             self.prime.text = prime_target_df[columns_pt[0]][trialN]
@@ -487,6 +491,10 @@ class Experiment(object):
                     key = trial_kb.waitKeys(keyList=('z', 'm'), stimDraw=self.target)
                     target_time_end = self.monitorclock.getTime()
 
+                    # Verify if stop
+                    if key == 'stop':
+                        stop = True
+
                     # VERIFY THE CONTENT OF KEY
                     if key is None:
                         print("The key variable is equal to None")
@@ -504,23 +512,27 @@ class Experiment(object):
                     }
 
                     # UPDATE TRIALS DATA FRAME
-                    trials_data = trials_data.append({
-                        columns_trial[0] : self.prime.text,
-                        columns_trial[1] : self.target.text,
-                        columns_trial[2] : tClass,
-                        columns_trial[3] : pair_index,
-                        columns_trial[4] : self.back_mask.text,
-                        columns_trial[5] : l1_l2,
-                        columns_trial[6] : key.name,
-                        columns_trial[7] : None,
-                        columns_trial[8] : key.rt,
-                        columns_trial[9] : key.tDown, 
-                        columns_trial[10] : time_data['fixation_dur'],
-                        columns_trial[11] : time_data['back_mask_dur'],
-                        columns_trial[12] : time_data['prime_dur'],
-                        columns_trial[13] : time_data['forward_mask_dur'],
-                        columns_trial[14] : time_data['target_dur'],
-                        }, ignore_index=True)
+                    try:
+                        trials_data = trials_data.append({
+                            columns_trial[0] : self.prime.text,
+                            columns_trial[1] : self.target.text,
+                            columns_trial[2] : tClass,
+                            columns_trial[3] : pair_index,
+                            columns_trial[4] : self.back_mask.text,
+                            columns_trial[5] : l1_l2,
+                            columns_trial[6] : key.name,
+                            columns_trial[7] : None,
+                            columns_trial[8] : key.rt,
+                            columns_trial[9] : key.tDown, 
+                            columns_trial[10] : time_data['fixation_dur'],
+                            columns_trial[11] : time_data['back_mask_dur'],
+                            columns_trial[12] : time_data['prime_dur'],
+                            columns_trial[13] : time_data['forward_mask_dur'],
+                            columns_trial[14] : time_data['target_dur'],
+                            }, ignore_index=True)
+
+                    except AttributeError:
+                        raise Exception('The experiment was aborted because the user pressed the letter "q".')
 
                 self.win.flip()
 
@@ -759,11 +771,7 @@ class Experiment(object):
 
                 return data_trial_final
 
-    # def quitExperiment():
-    #     keys = self.kb.getKeys(keyList=('quit'))
-    #     if keys:
-    #         self.win.close()
-
+# test = Experiment(n=0, save=False, fullscreen=True)
 test = Experiment()
 # print(test)
 

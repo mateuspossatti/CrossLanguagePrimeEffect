@@ -14,10 +14,10 @@ import seaborn as sns
 # with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(test.startExperiment(False))
 
 
-df = pd.read_csv(r'.\trials_data\subject-1-norm.csv', index_col=0)
+# df = pd.read_csv(r'.\trials_data\subject-1-norm.csv', index_col=0)
 
-eng_prime_df = df[df['l1_l2'] == 'EngPor']
-por_prime_df = df[150:].reset_index(drop=True)
+# eng_prime_df = df[df['l1_l2'] == 'EngPor']
+# por_prime_df = df[150:].reset_index(drop=True)
 
 # print(eng_prime_df)
 # for i in range(150):
@@ -29,12 +29,12 @@ por_prime_df = df[150:].reset_index(drop=True)
 # print(por_cor/150, eng_cor/150)
 # print(df.columns)
 
-sequence = ['congruent', 'incongruent', 'control']
+# sequence = ['congruent', 'incongruent', 'control']
 
-sns.catplot(data=eng_prime_df, x='group', y='response_time', order=sequence, kind='box')
+# sns.catplot(data=eng_prime_df, x='group', y='response_time', order=sequence, kind='box')
 # ax.grid(axis='y', which='major')
 
-plt.show()
+# plt.show()
 
 # df = pd.read_csv(r'.\trials_data\subject-11.csv', index_col=0)
 
@@ -53,3 +53,13 @@ plt.show()
 # with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(df, n)
 
 # df.to_csv(r'.\trials_data\subject-13.csv')
+kb = keyboard.Keyboard()
+
+print('start')
+
+for i in range(10):
+    key = kb.getKeys(keyList=('quit'))
+    for k in key:
+        print(k.name)
+
+print('end')
