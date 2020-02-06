@@ -580,9 +580,9 @@ class Experiment(object):
                 else:
                     print('The command typed is not valid, please answer with "y" to do the full expriment\nor "n" to do a partial experiment.\nYour answer was: "{}"'.format(save))
 
-
         # IF THE EXPERIMENT IS SET TO FULLCROSS THAN
         if self.fullcross:
+
             data_first_trial = self.startTrial('first', full)
 
             # REMEMBER OF DELETE LOOP
@@ -759,6 +759,11 @@ class Experiment(object):
 
                 return data_trial_final
 
+    # def quitExperiment():
+    #     keys = self.kb.getKeys(keyList=('quit'))
+    #     if keys:
+    #         self.win.close()
+
 test = Experiment()
 # print(test)
 
@@ -777,6 +782,15 @@ class StatisticalAnalysis():
 
         self.subject_n = n
 
+        # Create the attribute subject_df that will be used in the full_preprocess function
+        self.subject_raw_df = pd.read_csv(r'.\trials_data\subject-{}.csv'.format(n), index_col=0)
+        if columns is None:
+            columns = ['response_time', 'group', 'correct', 'pair_index', 'l1_l2'] 
+        
+        subject_df = self.subject_raw_df[columns]
+        subject_df['response_time'] * 1000
+        self.subject_df = subject_df
+
         # VERIFY IF A FILE WITH THE SAME NAME ALREADY EXIST. IF IT'S NIETHER PREPROCESS DATA OR SAVE WILL BE EXECUTED
         try:
             self.full_preprocess_data = pd.read_csv(r'.\trials_data\subject-{}-norm.csv'.format(n), index_col=0)
@@ -785,15 +799,6 @@ class StatisticalAnalysis():
             preprocess_data = True
 
         if preprocess_data:
-            self.subject_raw_df = pd.read_csv(r'.\trials_data\subject-{}.csv'.format(n), index_col=0)
-
-            if columns is None:
-                columns = ['response_time', 'group', 'correct', 'pair_index', 'l1_l2'] 
-            
-            subject_df = self.subject_raw_df[columns]
-            subject_df['response_time'] = np.around(np.array((subject_df['response_time'].values) * 1000), 2)
-            self.subject_df = subject_df
-
             self.full_preprocess_data = self.full_preprocess()
 
         # QUESTION TO THE USER ABOUT HIS DESIRE OF SAVE THE PREPROCESS DATA
@@ -809,8 +814,6 @@ class StatisticalAnalysis():
 
                 if save == 'y':
                     self.save()
-
-        self.fig, self.axis = self.plotdata()
 
         # QUESTION TO THE USER IF HE WANT TO VIEW THE DATA
         if view_data is None:
@@ -841,7 +844,7 @@ class StatisticalAnalysis():
 
             # IF VD IS "Y" THAN CALL VIEW_DATA()
             else:
-                self.view_data()
+                self.plotdata()
 
                 # QUESTION ABOUT PRINT DATA
                 while True:
@@ -861,7 +864,7 @@ class StatisticalAnalysis():
         # ELSE: VIEW_DATA IS NOT NONE
         else:
             if view_data:
-                self.view_data()
+                self.plotdata()
 
                 # QUESTION ABOUT PRINT DATA
                 while True:
@@ -921,7 +924,6 @@ class StatisticalAnalysis():
             for langPair in l1_l2:
                 data_onel = data[data['l1_l2'] == langPair]
                 data_onel = data_onel[data_onel['group'] == group]['response_time']
-                print(data_onel)
                 q1, q3 = np.percentile(data_onel, [25, 75])
                 lower_bound[langPair] = np.around((q1-(1.5*(q3-q1))), 2)
                 upper_bound[langPair] = np.around((q3+(1.5*(q3-q1))), 2)
@@ -993,10 +995,11 @@ class StatisticalAnalysis():
 
         data = df
 
+        # Define the specific language variables
         n_l0, cong_l0, incong_l0, control_l0, n_l1, cong_l1, incong_l1, control_l1 = (0, 0, 0, 0, 0, 0, 0, 0)
-
         l1_l2 = ['PorEng', 'EngPor']
 
+        # The loop below will remove erros through booleans, but the conditionals inside the loop are recording subgroups to print out later
         bol = []
         for i in range(data.shape[0]):
             if data['correct'][i] == True:
@@ -1023,6 +1026,7 @@ class StatisticalAnalysis():
 
         data = data[bol]
 
+        # IF THERE'S AT LEAST 1 ERROR THAN:
         if n_l0 > 0 or n_l1 > 0: 
             # PRINT PORENG ERRORS
             print('{n_l0} errors removed from {l0} pairs.'.format(n_l0=n_l0, l0=l1_l2[0]))
@@ -1031,8 +1035,25 @@ class StatisticalAnalysis():
             # PRINT ENGPOR ERRORS
             print('{n_l1} errors removed from {l1} pairs.'.format(n_l1=n_l1, l1=l1_l2[1]))
             print('congruent: {cong_l1}, incongruent: {incong_l1}, control: {control_l1}.'.format(cong_l1=cong_l1, incong_l1=incong_l1, control_l1=control_l1))
-    
-        return data.reset_index(drop=True)
+
+            # CREATE A DICTIONARY WITH IMPORTANT VALUES:
+            # The first line will calculate the mean of errors with cong and incong. The second line will calculate the factor
+            # error of test vs control analysis
+            meanTestL0 = np.mean((cong_l0, incong_l0))
+            testControlL0 = control_l0 / meanTestL0
+
+            meanTestL1 = np.mean((cong_l1, incong_l1))
+            testControlL1 = control_l1 / meanTestL1
+
+            # Create to record the values:
+            testControl = {
+                l1_l2[0] : testControlL0,
+                l1_l2[1] : testControlL1
+            }
+
+            return data.reset_index(drop=True), testControl
+
+        return data.reset_index(drop=True), None
 
     def z_score_normalization(self, df=None):
         # IF THERE'S NO DF THAN RETURN NONE
@@ -1098,13 +1119,23 @@ class StatisticalAnalysis():
         else:
             data = df
 
-        data = self.remove_errors(df=data)
+        # Remove errors
+        data, testControlF = self.remove_errors(df=data)
+
+        # Create testControlF attribute
+        self.testControlF = testControlF 
+
+        # Remove outliers
         data = self.remove_outliers(df=data, group='incongruent')
         data = self.remove_outliers(df=data, group='congruent')
         data = self.remove_outliers(df=data, group='control')
+
+        # Normalize the data
         data = self.z_score_normalization(df=data)
         data = self.exp_normalization(df=data)
         data = self.rescaling(df=data)
+
+        # Drop the correct column
         data = data.drop('correct', axis=1)
 
         return data
@@ -1137,14 +1168,18 @@ class StatisticalAnalysis():
 
     def plotdata(self, first_hue='group', second_hue='l1_l2',  df=None):
         if df is None:
-            data = self.full_preprocess_data
+            data = self.full_preprocess()
         else:
             data = df
 
         sequence = ['incongruent', 'congruent', 'control']
         l1_l2 = ['PorEng', 'EngPor']
 
-        fig, axes = plt.subplots(2, 2, figsize=(16, 16), squeeze=True)
+        # Print out the test vs control error analysis:
+        print('Test VS Control Error Analysis:', self.testControlF)
+
+        # Create fig and axes objects
+        fig, axes = plt.subplots(2, 2, figsize=(16, 16))
 
         dataPorEng = data[data['l1_l2'] == l1_l2[0]]
         sns.catplot(data=dataPorEng, x=first_hue, y='response_time', ax=axes[0, 0], order=sequence, kind='box')
@@ -1154,31 +1189,31 @@ class StatisticalAnalysis():
         sns.catplot(data=dataEngPor, x=first_hue, y='response_time', ax=axes[0, 1], order=sequence, kind='box')
         axes[0, 1].grid(axis='y', which='major')
 
-        sns.violinplot(data=data, x=first_hue, y='response_time', hue=second_hue, split=True, ax=axes[1, 1], order=sequence, legend=False)
-        axes[1, 1].grid(axis='y', which='major')
 
-
-        sns.kdeplot(data[data[first_hue] == 'control']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='g')
-        sns.kdeplot(data[data[first_hue] == 'incongruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='b')
-        sns.kdeplot(data[data[first_hue] == 'congruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='tab:orange')
-        sns.kdeplot(data[data[first_hue] == 'control']['response_time'], alpha=.8, ax=axes[1, 0], color='g')
-        sns.kdeplot(data[data[first_hue] == 'incongruent']['response_time'], alpha=.8, ax=axes[1, 0], color='b')
-        sns.kdeplot(data[data[first_hue] == 'congruent']['response_time'], alpha=.8, ax=axes[1, 0], color='tab:orange')
-        axes[1, 0].axvline(np.median(data[data[first_hue] == 'control']['response_time']), alpha=.8, ymax=.5, c='g')
-        axes[1, 0].axvline(np.median(data[data[first_hue] == 'incongruent']['response_time']), alpha=.8, ymax=.5, c='b')
-        axes[1, 0].axvline(np.median(data[data[first_hue] == 'congruent']['response_time']), alpha=.8, ymax=.5, c='tab:orange')
+        sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'control']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='g')
+        sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'incongruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='b')
+        sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'congruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='tab:orange')
+        sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'control']['response_time'], alpha=.8, ax=axes[1, 0], color='g')
+        sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'incongruent']['response_time'], alpha=.8, ax=axes[1, 0], color='b')
+        sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'congruent']['response_time'], alpha=.8, ax=axes[1, 0], color='tab:orange')
+        axes[1, 0].axvline(np.median(dataPorEng[dataPorEng[first_hue] == 'control']['response_time']), alpha=.8, ymax=.5, c='g')
+        axes[1, 0].axvline(np.median(dataPorEng[dataPorEng[first_hue] == 'incongruent']['response_time']), alpha=.8, ymax=.5, c='b')
+        axes[1, 0].axvline(np.median(dataPorEng[dataPorEng[first_hue] == 'congruent']['response_time']), alpha=.8, ymax=.5, c='tab:orange')
         axes[1, 0].legend(['control', 'incongruent', 'congruent'])
 
-        # cong = data[data['group'] == 'congruent']
-        # sns.distplot(cong['response_time'], ax=axes[1, 1], color='tab:orange')
-        # axes[1, 1].grid(axis='y', which='major')
+        sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'control']['response_time'], shade=True, alpha=.2, ax=axes[1, 1], color='g')
+        sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'incongruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 1], color='b')
+        sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'congruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 1], color='tab:orange')
+        sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'control']['response_time'], alpha=.8, ax=axes[1, 1], color='g')
+        sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'incongruent']['response_time'], alpha=.8, ax=axes[1, 1], color='b')
+        sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'congruent']['response_time'], alpha=.8, ax=axes[1, 1], color='tab:orange')
+        axes[1, 1].axvline(np.median(dataEngPor[dataEngPor[first_hue] == 'control']['response_time']), alpha=.8, ymax=.5, c='g')
+        axes[1, 1].axvline(np.median(dataEngPor[dataEngPor[first_hue] == 'incongruent']['response_time']), alpha=.8, ymax=.5, c='b')
+        axes[1, 1].axvline(np.median(dataEngPor[dataEngPor[first_hue] == 'congruent']['response_time']), alpha=.8, ymax=.5, c='tab:orange')
+        axes[1, 1].legend(['control', 'incongruent', 'congruentn'])
 
-        return fig, axes
-
-    def view_data(self):
-        fig, axis = self.fig, self.axis
         plt.show()
 
-# sa = StatisticalAnalysis(n=11, save=None, view_data=True)
+# sa = StatisticalAnalysis(n=100, save=False, view_data=True)
 # print(sa.remove_errors(df=sa.subject_df))
 # with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(StatisticalAnalysis(n=6, save=False).full_preprocess_data)
