@@ -1,28 +1,47 @@
+import subprocess
+
+# Try to import pip
+# If pip isn't installed the call function will execute the installation of pip
+# than will install the requirements.txt
+try:
+    import pip
+except ModuleNotFoundError:
+    subprocess.call(['python', 'get-pip.py'], shell=True)
+    subprocess.call(['pip', 'install', '-r', 'requirements.txt'], shell=True)
+
+from psychopy import visual, core, monitors, event, clock, sound
 from matplotlib import pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
-import pip
+import json
 
+# Import the modified version of psychopy hardware.keyboard
 import keyboard_mod as keyboard
-
-# TRY IMPORT PSYCHOPY MODULE
-try:
-    from psychopy import visual, core, monitors, event, clock
-    # from psychopy.hardware import keyboard_mod as keyboard, emulator
-except ImportError:
-    import pip
-    pip.main(['install', 'psychopy'])
-    from psychopy import visual, core, monitors, event, clock
-    from psychopy.hardware import keyboard
-
 
 class Experiment(object):
     def __init__(self, n=None, mask_case='upper', pairs_n=50, fullcross=True, conditions_n=3, mask_size=8, onelanguageorder=None,
-    fullscreen=False, screen_hz=60, timeparadigm=None, kb_keys=None, monitor_name='SurfaceBook2-manual', save=None):
+    fullscreen=False, timeparadigm=None, kb_keys=None, save=None):
         """:Parameters:
         fullcross will ditermine if the effect will be studied in the two ways. 
         """
+
+# LOAD THE JSON FILE WITH THE MONITOR SETTINGS
+        monitorSets = open(r'.\monitor_settings.json', 'r')
+        self.monDict = json.load(monitorSets)
+
+        # If there is no settings, a function will be executed that will question the user to set the settings
+        if self.monDict['monitor_name'] is None:
+            name, width, resol, freq = self.define_mon_settings()
+
+            self.monDict['monitor_name'] = name
+            self.monDict['monitor_width'] = width
+            self.monDict['monitor_resolution'] = resol
+            self.monDict['monitor_frequency'] = freq
+
+            with open(r'.\monitor_settings.json', 'w') as monitorSets:
+                json.dump(self.monDict, monitorSets)
+
 # QUESTION THE USER ABOUT THE VOLUNTEER NUMBER IF IT ISN'T ALREADY DECLARE
         if n is None:
             while True:
@@ -61,8 +80,7 @@ class Experiment(object):
         self.fullcross = fullcross
         self.mask_size = mask_size
         self.fullscreen = fullscreen
-        self.screen_hz = screen_hz
-        # self.em = emulator.ResponseEmulator(simResponses=[(0.2, 'z'), (0.4, 'z'), (0.3, 'm'), (0.6, 'm')])
+        self.screen_hz = self.monDict['monitor_frequency']
 
 # DETERMINE LANGUAGE ORDER FOR THE ACTUAL SUBJECT
         def subject_experiment_order():
@@ -86,14 +104,6 @@ class Experiment(object):
 
         self.language_order, self.kb_key_response = subject_experiment_order() 
 
-# CREATE MONITOR
-        def set_monitor():
-            mon = monitors.Monitor(monitor_name)
-
-            return mon
-
-        self.mon = set_monitor()
-
 # DETERMINE FRAME DURATION:
         def frame_duration():
             ms_paradigm = self.timeparadigm
@@ -105,7 +115,7 @@ class Experiment(object):
 
         self.frame_paradigm = frame_duration()
 
-# GENERATE CLOCK AND KEYBOARD
+# GENERATE CLOCK, KEYBOARD, MASK AND MONITOR
         def clock_generator():
             monitorclock = clock.Clock()
             return monitorclock
@@ -134,6 +144,8 @@ class Experiment(object):
             return mask_list
 
         self.mask_df = mask_generator()
+
+        self.mon = self.set_monitor()
 
 # DEFINE WORDS SEQUENCE
         def words_sequence():
@@ -294,18 +306,192 @@ class Experiment(object):
 
 ############# END OF __INIT__() #################
 
+    def define_mon_settings(self):
+        print("""Unfortunately, you don't have set your monitor settings yet.\nPlease, answer the next 4 questions to configure your monitor correctly""")
+        # Question the name of the monitor
+        def question_mon_name():
+            # Question about the name of the monitor:
+            name = str(input('What name do you want to give to your monitor? ')) 
+
+            # Confirm with the user if he really want to use the name typed:
+            while True:
+                confirm_name = str(input('Are you certain that you want to use "{name}" as the name of your monitor?\n (y/n): '.format(name=name))).lower()
+
+                # Command typed is invalid:
+                if confirm_name != 'y' and confirm_name != 'n':
+                    print("""The command typed "{confirm_name}" is invalid, please type "y" to use "{name}" as your monitor's name\nor type "n" to choose a new name.""".format(name=name, confirm_name=confirm_name))
+                
+                # The user want to choose another name
+                elif confirm_name == 'n':
+                    name = question_mon_name()
+                    break
+                
+                # The user confirmed the name
+                else:
+                    break
+
+            return name
+
+        # Question width of the monitor:
+        def question_mon_width():
+            # Question the width of the display
+            while True:
+                try:
+                    width = float(input('Please, insert the width of your display in "cm": '))
+                    break
+
+                except ValueError:
+                    print("""Oops!  That was no valid number format.\nPlease, verify if you separated the decimals with a "." and not a ",". You typed "{width}".""".format(width=width))
+
+                # Confirm with the user if the width is correct
+            while True:
+                confirm_vert_pix = str(input('Please, confirm if you typed the correct value. Width = {width} cm.\n (y/n): '.format(width=width))).lower()
+
+                # Command typed is invalid:
+                if confirm_vert_pix != 'y' and confirm_vert_pix != 'n':
+                    print("""The command typed "{confirm_vert_pix}" is invalid, please type "y" to confirm that the display's width is {width} cm.\nor type "n" to choose a new value for the display's width.""".format(width=width, confirm_vert_pix=confirm_vert_pix))
+
+                # The user want to choose another value
+                elif confirm_vert_pix == 'n':
+                    width = question_mon_width()
+                    break
+
+                # The user confirmed the display's width
+                else:
+                    break
+
+            return width
+
+        # Question monitor's resolution
+        def question_mon_resol():
+            print("""Please, read the brief introduction bellow to answer the next 2 questions about the resolution of your monitor.\nNormally, the monitor's resolution is in (x, y) format, where the "x" represents the quantity of pixels in the horizontal, and "y" represents the number of pixels in the vertical.\nFor example, a monitor with the resolution 1920 x 1080 have 1920 pixels in the horizontal length and 1080 in the vertical length.""")
+
+            def question_vert_pix():
+                # Question the width of the display
+                while True:
+                    try:
+                        vert_pix = int(input('How many pixels in the VERTICAL have your monitor? '))
+                        break
+
+                    except ValueError:
+                        print("Oops!  That was no valid number.  Try again...")
+
+                    # Confirm with the user if the vert_pix is correct
+                while True:
+                    confirm_vert_pix = str(input('Please, confirm if you typed the correct value for the VERTICAL number of pixels. Your answer was {vert_pix}\n (y/n): '.format(vert_pix=vert_pix))).lower()
+
+                    # Command typed is invalid:
+                    if confirm_vert_pix != 'y' and confirm_vert_pix != 'n':
+                        print("""The command typed "{confirm_vert_pix}" is invalid, please type "y" to confirm that your monitor have {vert_pix} pixels in the HORIZONTAL.\nor type "n" to choose a new value to the number of HORIZONTAL pixels in your monitor.""".format(vert_pix=horz_pix, confirm_vert_pix=confirm_vert_pix))
+
+                    # The user want to choose another value
+                    elif confirm_vert_pix == 'n':
+                        vert_pix = question_vert_pix()
+                        break
+
+                    # The user confirmed the display's vert_pix
+                    else:
+                        break
+
+                return vert_pix
+
+            def question_horz_pix():
+                # Question the width of the display
+                while True:
+                    try:
+                        horz_pix = int(input('How many pixels in the HORIZONTAL have your monitor? '))
+                        break
+
+                    except ValueError:
+                        print("Oops!  That was no valid number.  Try again...")
+
+                    # Confirm with the user if the horz_pix is correct
+                while True:
+                    confirm_horz_pix = str(input('Please, confirm if you typed the correct value for the HORIZONTAL number of pixels. Your answer was {horz_pix}\n (y/n): '.format(horz_pix=horz_pix))).lower()
+
+                    # Command typed is invalid:
+                    if confirm_horz_pix != 'y' and confirm_horz_pix != 'n':
+                        print("""The command typed "{confirm_horz_pix}" is invalid, please type "y" to confirm that your monitor have {horz_pix} pixels in the HORIZONTAL.\nor type "n" to choose a new value to the number of HORIZONTAL pixels in your monitor.""".format(horz_pix=horz_pix, confirm_horz_pix=confirm_horz_pix))
+
+                    # The user want to choose another value
+                    elif confirm_horz_pix == 'n':
+                        horz_pix = question_horz_pix()
+                        break
+
+                    # The user confirmed the display's vert_pix
+                    else:
+                        break
+
+                return horz_pix
+
+            horz_pix = question_horz_pix()
+            vert_pix = question_vert_pix()
+
+            return (horz_pix, vert_pix)
+
+        # Question the monitor's frequency
+        def question_mon_freq():
+            print("""All monitors have a frame rate value that says how many "images" the monitor can display per second.\nThe most commom frame rate value is 60 Hz.""")
+            while True:
+                try:
+                    freq = int(input('Please, insert the frame rate of your monitor in "hz" (hertz): '))
+                    break
+
+                except ValueError:
+                    print("Oops!  That was no valid number.  Try again...")
+
+                # Confirm with the user if the freq is correct
+            while True:
+                confirm_mon_freq = str(input('Please, confirm if you typed the correct value. Your answer was {freq} Hz.\n (y/n): '.format(freq=freq))).lower()
+
+                # Command typed is invalid:
+                if confirm_mon_freq != 'y' and confirm_mon_freq != 'n':
+                    print("""The command typed "{confirm_mon_freq}" is invalid, please type "y" to confirm that the monitor's frame rate is {freq} Hz.\nor type "n" to choose a new value for the monitor's frame rate.""".format(freq=freq, confirm_mon_freq=confirm_mon_freq))
+
+                # The user want to choose another value
+                elif confirm_mon_freq == 'n':
+                    freq = question_mon_freq()
+                    break
+
+                # The user confirmed the display's freq
+                else:
+                    break
+
+            return freq
+
+        name = question_mon_name()
+        width = question_mon_width()
+        resolution = question_mon_resol()
+        freq = question_mon_freq()
+
+        return name, width, resolution, freq
+
     def set_window(self):
+        # Load monitor frequency
+        freq = self.monDict['monitor_frequency']
+
         if self.fullscreen:
-            win = visual.Window(monitorFramePeriod=60, monitor=self.mon, fullscr=True, units=['cm', 'norm'], color=(1, 1, 1))
+            win = visual.Window(monitorFramePeriod=freq, monitor=self.mon, fullscr=True, units=['cm', 'norm'], color=(1, 1, 1))
         else:
-            win = visual.Window(size=[1200, 800], monitorFramePeriod=60, monitor=self.mon, units=['cm', 'norm'], color=(1, 1, 1))
+            win = visual.Window(size=[1200, 800], monitorFramePeriod=freq, monitor=self.mon, units=['cm', 'norm'], color=(1, 1, 1))
         return win
+
+    def set_monitor(self):
+        # Load monitor settings
+        name = self.monDict['monitor_name']
+        width = self.monDict['monitor_width']
+        resol = self.monDict['monitor_resolution']
+
+        mon = monitors.Monitor(name=name, width=width)
+        mon.setSizePix(resol)
+
+        return mon
 
     def confirmDisplaySet(self):
         try:
             self.win
         except AttributeError:
-            self.win = self.set_window()
+            self.win = self.set_window(monDict=self.monDict)
 
         # DETERMINE THE LENGTH OF THE LINES
         horz_leng = np.random.choice(np.arange(1, 10, 0.5)) / 2
@@ -368,7 +554,8 @@ class Experiment(object):
         except AttributeError:
             self.win = self.set_window()
 
-
+        # CREATE SOUND OBJECT:
+        # error_sound = sound.SoundPTB(value=)
 
         # CREATE STIMULUS OBJECT
         def stimulus_generator():
@@ -532,6 +719,7 @@ class Experiment(object):
                             }, ignore_index=True)
 
                     except AttributeError:
+                        self.win.close()
                         raise Exception('The experiment was aborted because the user pressed the letter "q".')
 
                 self.win.flip()
@@ -772,7 +960,7 @@ class Experiment(object):
                 return data_trial_final
 
 # test = Experiment(n=0, save=False, fullscreen=True)
-test = Experiment()
+test = Experiment(fullscreen=False)
 # print(test)
 
 ##############################################################################################################################################################################
