@@ -27,7 +27,7 @@ class Experiment(object):
         """
 
 # LOAD THE JSON FILE WITH THE MONITOR SETTINGS
-        monitorSets = open(r'.\monitor_settings.json', 'r')
+        monitorSets = open(r'.\support_material\monitor_settings.json', 'r')
         self.monDict = json.load(monitorSets)
 
         # If there is no settings, a function will be executed that will question the user to set the settings
@@ -39,7 +39,7 @@ class Experiment(object):
             self.monDict['monitor_resolution'] = resol
             self.monDict['monitor_frequency'] = freq
 
-            with open(r'.\monitor_settings.json', 'w') as monitorSets:
+            with open(r'.\support_material\monitor_settings.json', 'w') as monitorSets:
                 json.dump(self.monDict, monitorSets)
 
 # QUESTION THE USER ABOUT THE VOLUNTEER NUMBER IF IT ISN'T ALREADY DECLARE
@@ -150,11 +150,11 @@ class Experiment(object):
 # DEFINE WORDS SEQUENCE
         def words_sequence():
             # LOAD CSV
-            words_df = pd.read_csv(r'words.csv').columns
+            words_df = pd.read_csv(r'.\support_material\words.csv').columns
             col_names = {}
             for col in words_df:
                 col_names[col] = str
-            words_df = pd.read_csv(r'words.csv', dtype=col_names)
+            words_df = pd.read_csv(r'.\support_material\words.csv', dtype=col_names)
 
             # CREATE KEY RESPONSE LIST
             obj, nobj = tuple(self.kb_key_response.values())
