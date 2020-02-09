@@ -1,13 +1,20 @@
-import subprocess
+import subprocess as sb
 
-from psychopy import visual, core, monitors, event, clock, sound
-from matplotlib import pyplot as plt
-import seaborn as sns
-import pandas as pd
-import numpy as np
-import json
+try:
+    from psychopy.preferences import Preferences
+    # Set preferences
+    prefs = Preferences()
+    prefs.hardware['audioLib'] = ['PTB']
 
-# Import the modified version of psychopy hardware.keyboard
+    from psychopy import visual, core, monitors, event, clock, sound
+    from matplotlib import pyplot as plt
+    import seaborn as sns
+    import pandas as pd
+    import numpy as np
+    import json
+except ModuleNotFoundError:
+    sb.run('pip3 install -r requirements.txt', shell=True)
+
 import keyboard_mod as keyboard
 
 class Experiment(object):
@@ -55,7 +62,7 @@ class Experiment(object):
         if onelanguageorder != None:
             self.onelanguageorder = onelanguageorder
         if timeparadigm == None:
-            self.timeparadigm = {'fixation' : 500, 'back_mask' : 100, 'prime' : 50, 'forward_mask' : 50}
+            self.timeparadigm = {'fixation' : 700, 'back_mask' : 100, 'prime' : 50, 'forward_mask' : 50}
         else:
             self.timeparadigm = timeparadigm
         if kb_keys == None:
@@ -72,6 +79,14 @@ class Experiment(object):
         self.mask_size = mask_size
         self.fullscreen = fullscreen
         self.screen_hz = self.monDict['monitor_frequency']
+
+# CREATE A GLOBAL KEY EVENT TO QUIT THE PROGRAM
+        # Determine key and modifires
+        key = 'q'
+        modifiers = ['ctrl']
+
+        # Create global key event
+        event.globalKeys.add(key=key, modifiers=modifiers, func=core.quit)
 
 # DETERMINE LANGUAGE ORDER FOR THE ACTUAL SUBJECT
         def subject_experiment_order():
@@ -94,6 +109,8 @@ class Experiment(object):
             return language_order, kb_key_response
 
         self.language_order, self.kb_key_response = subject_experiment_order() 
+
+        # self.instructions()
 
 # DETERMINE FRAME DURATION:
         def frame_duration():
@@ -458,6 +475,12 @@ class Experiment(object):
         return name, width, resolution, freq
 
     def set_window(self):
+        # If there's no monitor object, create it
+        try:
+            self.mon
+        except AttributeError:
+            self.mon = self.set_monitor()
+
         # Load monitor frequency
         freq = self.monDict['monitor_frequency']
 
@@ -525,7 +548,53 @@ class Experiment(object):
             raise Exception('Monitor configuration is WRONG, please stop the trials until corrected.')
 
     def instructions(self):
-        pass
+        # Verify if a window is already created
+        try:
+            self.win
+        except AttributeError:
+            self.win = self.set_window()
+
+        # Title
+        studyTitle = 'Cross-Language Associative Priming Effect Study'
+
+        # The versions of the introduction according to language choice
+        textPor = """
+        Este estudo tem objetivo de investigar as bases cognitivas do bilinguismo em brasileiros falantes da língua portuguesa e inglesa.
+
+        Para isso, o experimento é constituído da exposição de palavras (em português ou inglês) na tela do computador. Para cada palavra exposta na tela, você tem o objetivo de responder se ela representa um conceito concreto (animais, objetos, alimentos…) ou um conceito abstrato (ações, sentimentos, adjetivos…):
+
+        - Conceito concreto (ex.: gato): pressione a tecla “{}” no teclado.
+        - Conceito abstrato (ex.: chover): pressione a tecla “{}” no teclado.
+
+        Antes do período de avaliação, você participará de um período de treinamento constituído de 50 palavras. As primeiras 25 palavras serão em português, seguida por 25 palavras em inglês. 
+
+        Por favor, quando estiver pronto, pressione a tecla “Enter” no teclado para iniciar o período de treinamento.
+        """.format('a', 'b')
+
+        textEng = """
+        It's not ready yet.
+        """
+
+        # Verify what is the correct idiom of the introduction
+        textLang = self.language_order[:3]
+
+        # Condition statement to choose the text's verion
+        if textLang == 'Por':
+            _intText = textPor
+        elif textLang == 'Eng':
+            _intText = textEng
+
+        intText = visual.TextStim(self.win, text=_intText, units='norm', color=(-1, -1, -1))
+        # intText.setSize((1.8, 1.8), units='norm')
+        intText.size = (2, 2)
+
+        intText.autoDraw = True
+
+        self.win.flip()
+
+        intText.draw()
+        core.wait(3)
+        core.quit()
 
     def startTrial(self, order, full):
         """:Parameters:
@@ -614,6 +683,14 @@ class Experiment(object):
 
         # EXPERIMENT LOOP
         for trialN in np.arange(self.language_n): 
+            # Show fixation cross
+            self.fixation.setAutoDraw(True)
+            self.win.flip()
+            self.fixation.draw()
+
+            # Break to prepare the stimulus while the fixation cross is draw
+            stimPrep = core.StaticPeriod(screenHz=self.monDict['monitor_frequency'], win=self.win, name='Stimulus Preparation Interval')
+            self.monitorclock.reset(), stimPrep.start((self.timeparadigm['fixation'] / 1000))
 
             # STIMULUS PREPARATION
             self.back_mask.text = mask_df['mask'][trialN]
@@ -626,17 +703,16 @@ class Experiment(object):
 
             frame_rate = self.win.getActualFrameRate(10, 40, 0, 1)
 
-            # RESET MONITOR CLOCK
-            self.monitorclock.reset()
+            # Complete the preparation period with a frame remaning to finish the time.
+            stimPrep.complete(), self.fixation.setAutoDraw(False)
 
-            for frameN in np.arange(total_duration_f + 1):
-
-                # FIXATION DRAW
+            for frameN in np.arange(fixation_end - 1, total_duration_f + 1):
+                # FIXATION DRAW, the stimuli will be draw for one frame to finish the preparation interval
                 if frameN < fixation_end:
                     self.fixation.draw()
 
                 # BACK MASK DRAW
-                elif frameN == fixation_end:
+                if frameN == fixation_end:
                     back_mask_onset = self.monitorclock.getTime()
                     self.back_mask.draw()
                     
@@ -669,10 +745,6 @@ class Experiment(object):
                     key = trial_kb.waitKeys(keyList=('z', 'm'), stimDraw=self.target)
                     target_time_end = self.monitorclock.getTime()
 
-                    # Verify if stop
-                    if key == 'stop':
-                        stop = True
-
                     # VERIFY THE CONTENT OF KEY
                     if key is None:
                         print("The key variable is equal to None")
@@ -690,28 +762,23 @@ class Experiment(object):
                     }
 
                     # UPDATE TRIALS DATA FRAME
-                    try:
-                        trials_data = trials_data.append({
-                            columns_trial[0] : self.prime.text,
-                            columns_trial[1] : self.target.text,
-                            columns_trial[2] : tClass,
-                            columns_trial[3] : pair_index,
-                            columns_trial[4] : self.back_mask.text,
-                            columns_trial[5] : l1_l2,
-                            columns_trial[6] : key.name,
-                            columns_trial[7] : None,
-                            columns_trial[8] : key.rt,
-                            columns_trial[9] : key.tDown, 
-                            columns_trial[10] : time_data['fixation_dur'],
-                            columns_trial[11] : time_data['back_mask_dur'],
-                            columns_trial[12] : time_data['prime_dur'],
-                            columns_trial[13] : time_data['forward_mask_dur'],
-                            columns_trial[14] : time_data['target_dur'],
-                            }, ignore_index=True)
-
-                    except AttributeError:
-                        self.win.close()
-                        raise Exception('The experiment was aborted because the user pressed the letter "q".')
+                    trials_data = trials_data.append({
+                        columns_trial[0] : self.prime.text,
+                        columns_trial[1] : self.target.text,
+                        columns_trial[2] : tClass,
+                        columns_trial[3] : pair_index,
+                        columns_trial[4] : self.back_mask.text,
+                        columns_trial[5] : l1_l2,
+                        columns_trial[6] : key.name,
+                        columns_trial[7] : None,
+                        columns_trial[8] : key.rt,
+                        columns_trial[9] : key.tDown, 
+                        columns_trial[10] : time_data['fixation_dur'],
+                        columns_trial[11] : time_data['back_mask_dur'],
+                        columns_trial[12] : time_data['prime_dur'],
+                        columns_trial[13] : time_data['forward_mask_dur'],
+                        columns_trial[14] : time_data['target_dur'],
+                        }, ignore_index=True)
 
                 self.win.flip()
 
@@ -953,10 +1020,8 @@ class Experiment(object):
 
                 return data_trial_final
 
-
-
 # test = Experiment(n=0, save=False, fullscreen=True)
-test = Experiment(fullscreen=False)
+test = Experiment(n=0, fullscreen=False)
 # print(test)
 
 ##############################################################################################################################################################################

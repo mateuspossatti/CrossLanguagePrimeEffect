@@ -244,15 +244,15 @@ class Keyboard:
         Returns None if times out.
 
         """
-        # Create stop monitor keyboard
-        stopKb = Keyboard()
+        # # Create stop monitor keyboard
+        # stopKb = Keyboard()
 
-        def stopExperiment():
-            keys = stopKb.getKeys(keyList=('q'))
-            if keys:
-                return True
+        # def stopExperiment():
+        #     keys = stopKb.getKeys(keyList=('a'))
+        #     if keys:
+        #         return True
 
-            return False
+        #     return False
 
         # START KB, TIMER, AND RESET KB CLOCK
         self.start()
@@ -265,10 +265,10 @@ class Keyboard:
             stimDraw.win.flip()
             stimDraw.draw()
             keys = self.getKeys(keyList=keyList)
-            stop = stopExperiment()
+            # stop = stopExperiment()
 
-            if stop:
-                return 'stop'
+            # if stop:
+            #     return 'stop'
 
             # IF KEY BREAK
             if keys:

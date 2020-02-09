@@ -1,19 +1,54 @@
-from psychopy import visual, core, monitors, event
-from psychopy.sound import backend_ptb as sound
-# from psychopy import sound
-# from psychopy.sound.backend_sounddevice import SoundDeviceSound
-from psychopy.hardware import keyboard
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
+from psychopy import visual, core, event, monitors #import some libraries from PsychoPy
+
+
+# #create a window
+# mywin = visual.Window([800,600],monitor="testMonitor", units="deg")
+
+# #create some stimuli
+# grating = visual.GratingStim(win=mywin, mask='circle', size=3, pos=[-4,0], sf=3)
+# fixation = visual.GratingStim(win=mywin, size=0.2, pos=[0,0], sf=0, rgb=-1)
+
+# #draw the stimuli and update the window
+# while True: #this creates a never-ending loop
+#     grating.setPhase(0.05, '+')#advance phase by 0.05 of a cycle
+#     grating.draw()
+#     fixation.draw()
+#     mywin.flip()
+
+#     if len(event.getKeys())>0:
+#         break
+#     event.clearEvents()
+
+# #cleanup
+# mywin.close()
+# core.quit()
+
+# mon = monitors.Monitor('SurfaceBook2')
 import json
 
-clock = core.Clock()
+with open(r'.\support_material\monitor_settings.json', 'r') as monSet:
+    monDict = json.load(monSet)
+    print(monDict)
 
-wrong_sound = sound.SoundPTB(volume=1.0)
-# wrong_sound = SoundDeviceSound(value=r'.\incorrect.ogg', stereo=True)
+def set_monitor():
+    # Load monitor settings
+    name = monDict['monitor_name']
+    width = monDict['monitor_width']
+    resol = monDict['monitor_resolution']
+    mon = monitors.Monitor(name=name, width=width)
+    mon.setSizePix(resol)
+    return mon
 
-# for i in range(1):
-#     wrong_sound.play()
-wrong_sound.play()
+mon = set_monitor()
+
+# win = visual.Window([1500, 1000], monitor=mon, fullscreen=True)
+
+# text = visual.TextStim(win, text='a', units='norm', height=3)
+
+text.autoDraw = True
+
+win.flip()
+text.draw()
+core.wait(3)
+
+
