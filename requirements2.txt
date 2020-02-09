@@ -1,0 +1,6 @@
+matplotlib 
+numpy 
+psychopy
+psychtoolbox
+seaborn
+pandas
