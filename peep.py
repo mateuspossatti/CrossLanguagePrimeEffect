@@ -524,6 +524,9 @@ class Experiment(object):
             self.win.close()
             raise Exception('Monitor configuration is WRONG, please stop the trials until corrected.')
 
+    def instructions(self):
+        
+
     def startTrial(self, order, full):
         """:Parameters:
         order must be a string with the position of the trial.
@@ -726,6 +729,9 @@ class Experiment(object):
         trials_data['correct'] = correct_list
 
         return trials_data
+
+    def trialBreak(self):
+        pass
 
     def startExperiment(self, full=None, save=None):
         # QUESTION THE USER IF HE WANT TO SAVE THE DATA THAT WILL BE COLLECTED 
@@ -947,8 +953,7 @@ class Experiment(object):
 
                 return data_trial_final
 
-    def trialBreak(self):
-        pass
+
 
 # test = Experiment(n=0, save=False, fullscreen=True)
 test = Experiment(fullscreen=False)

@@ -1,0 +1,6 @@
+Este estudo tem objetivo de investigar as bases cognitivas do bilinguismo em brasileiros falantes da língua portuguesa e inglesa.
+Para isso, o experimento é constituído da exposição de palavras (em português ou inglês) na tela do computador. Para cada palavra exposta na tela, você tem o objetivo de responder se ela representa um conceito concreto (animais, objetos, alimentos…) ou um conceito abstrato (ações, sentimentos, adjetivos…): 
+- Conceito concreto (ex.: gato): pressione a tecla “{}” no teclado.
+- Conceito abstrato (ex.: chover): pressione a tecla “{}” no teclado.
+ Antes do período de avaliação, você participará de um período de treinamento constituído de 50 palavras. As primeiras 25 palavras serão em português, seguida por 25 palavras em inglês. 
+Por favor, quando estiver pronto, pressione a tecla “Enter” no teclado para iniciar o período de treinamento.
