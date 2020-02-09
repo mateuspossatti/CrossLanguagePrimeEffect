@@ -525,7 +525,7 @@ class Experiment(object):
             raise Exception('Monitor configuration is WRONG, please stop the trials until corrected.')
 
     def instructions(self):
-        
+        pass
 
     def startTrial(self, order, full):
         """:Parameters:
