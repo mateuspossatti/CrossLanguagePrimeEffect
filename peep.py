@@ -282,8 +282,6 @@ class Experiment(object):
 
         self.first_sequence, self.second_sequence = words_sequence()
 
-        self.startPractice(False)
-
 # QUESTION THE USER IF HIS WANT TO START THE EXPERIMENT
         while True:
             startexp = str(input('Do you want to begin the expriment?\n(y/n): ')).lower()
@@ -718,9 +716,9 @@ class Experiment(object):
         # Create prime-target data frame
         def target_df(PorTarg=PorTarg, EngTarg=EngTarg):
             if self.subject_n % 2 == 0:
-                PorTarg = PorTarg[['target_por', 'correct_response', 'pair_index']]
+                PorTarg = PorTarg[['target_por', 'correct_response']]
                 PorTarg.rename(columns={'target_por' : 'target'}, inplace=True)
-                EngTarg = EngTarg[['target_eng', 'correct_response', 'pair_index']]
+                EngTarg = EngTarg[['target_eng', 'correct_response']]
                 EngTarg.rename(columns={'target_eng' : 'target'}, inplace=True)
 
                 target_df = PorTarg.append(EngTarg).reset_index(drop=True)
