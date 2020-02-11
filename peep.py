@@ -1,13 +1,9 @@
 import subprocess as sb
 
 try:
-    from psychopy.preferences import Preferences
-    # Set preferences
-    prefs = Preferences()
-    prefs.hardware['audioLib'] = ['PTB']
-
-    from psychopy import visual, core, monitors, event, clock, sound
+    from psychopy import visual, core, monitors, event, clock
     from matplotlib import pyplot as plt
+    from playsound import playsound
     import seaborn as sns
     import pandas as pd
     import numpy as np
@@ -19,7 +15,7 @@ import keyboard_mod as keyboard
 
 class Experiment(object):
     def __init__(self, n=None, mask_case='upper', pairs_n=50, fullcross=True, conditions_n=3, mask_size=8, onelanguageorder=None,
-    fullscreen=False, timeparadigm=None, kb_keys=None, save=None):
+    fullscreen=False, timeparadigm=None, kb_keys=None, save=None, practiceLeng=50):
         """:Parameters:
         fullcross will ditermine if the effect will be studied in the two ways. 
         """
@@ -79,6 +75,7 @@ class Experiment(object):
         self.mask_size = mask_size
         self.fullscreen = fullscreen
         self.screen_hz = self.monDict['monitor_frequency']
+        self.practiceLeng = practiceLeng
 
 # CREATE A GLOBAL KEY EVENT TO QUIT THE PROGRAM
         # Determine key and modifires
@@ -94,23 +91,24 @@ class Experiment(object):
             if fullcross == True:
                 if n % 2 == 0:
                     language_order = 'PorEng-EngPor'
-                    kb_key_response = {'object' : right, 'not-object' : left}
+                    kb_key_response = {'concrete' : right, 'abstract' : left}
                 else:
                     language_order = 'EngPor-PorEng'
-                    kb_key_response = {'object' : left, 'not-object' : right}
+                    kb_key_response = {'concrete' : left, 'abstract' : right}
 
             elif fullcross == False:
                 language_order = self.onelanguageorder
                 if n % 2 == 0:
-                    kb_key_response = {'object' : left, 'not-object' : right}
+                    kb_key_response = {'concrete' : left, 'abstract' : right}
                 else:
-                    kb_key_response = {'object' : right, 'not-object' : left}
+                    kb_key_response = {'concrete' : right, 'abstract' : left}
 
             return language_order, kb_key_response
 
         self.language_order, self.kb_key_response = subject_experiment_order() 
 
-        # self.instructions()
+        self.firstLang = self.language_order.split('-')[0]
+        self.secondLang = self.language_order.split('-')[1]
 
 # DETERMINE FRAME DURATION:
         def frame_duration():
@@ -123,7 +121,7 @@ class Experiment(object):
 
         self.frame_paradigm = frame_duration()
 
-# GENERATE CLOCK, KEYBOARD, MASK AND MONITOR
+# GENERATE CLOCK, KEYBOARD AND MONITOR
         def clock_generator():
             monitorclock = clock.Clock()
             return monitorclock
@@ -136,22 +134,6 @@ class Experiment(object):
             return kb
 
         self.kb = hardware_generator()
-
-        def mask_generator(mask_char=None, total=None, mask_size=None):
-            if mask_char == None:
-                mask_char = self.mask_char
-            if total == None:
-                total = self.totaltrials_n
-            if mask_size == None:
-                mask_size = self.mask_size
-            mask_list = np.random.choice(mask_char, replace=True, size=(total, mask_size))
-            mask_list = ["".join(mask_list[i]) for i in range(total)]
-            mask_list = pd.DataFrame({
-                'mask' : mask_list
-            })
-            return mask_list
-
-        self.mask_df = mask_generator()
 
         self.mon = self.set_monitor()
 
@@ -214,6 +196,14 @@ class Experiment(object):
                 # PRIME SEQUENCE
                 prime_f = cong_df[first[0]].append(incong_df[first[0]].append(control_df[first[2]])).reset_index(drop=True)
 
+                # Put the prime in UPPER CASE
+                prime_f_UC = []
+                for i in range(prime_f.shape[0]):
+                    word = prime_f[i].upper()
+                    prime_f_UC.append(word)
+
+                prime_f = prime_f_UC
+
                 # TARGET SEQUENCE
                 target_f = cong_df[first[1]].append(incong_df[first[1]].append(control_df[first[1]])).reset_index(drop=True)
 
@@ -231,6 +221,14 @@ class Experiment(object):
                 # PRIME SEQUENCE
                 prime_s = cong_df[second[0]].append(incong_df[second[0]].append(control_df[second[2]])).reset_index(drop=True)
 
+                # Put the prime in UPPER CASE
+                prime_s_UC = []
+                for i in range(prime_s.shape[0]):
+                    word = prime_s[i].upper()
+                    prime_s_UC.append(word)
+
+                prime_s = prime_s_UC
+
                 # TARGET SEQUENCE
                 target_s = cong_df[second[1]].append(incong_df[second[1]].append(control_df[second[1]])).reset_index(drop=True)
 
@@ -246,8 +244,6 @@ class Experiment(object):
                 # prime_target_second = None
 
                 return prime_target_first.reindex(index_f).reset_index(drop=True), prime_target_second.reindex(index_s).reset_index(drop=True)
-
-
 
             else:
                 lo = self.onelanguageorder
@@ -547,54 +543,456 @@ class Experiment(object):
             self.win.close()
             raise Exception('Monitor configuration is WRONG, please stop the trials until corrected.')
 
-    def instructions(self):
+    def stimulus_generator(self):
+        fixation = visual.ShapeStim(self.win, 
+            vertices=((0, -0.5), (0, 0.5), (0,0), (-0.5,0), (0.5, 0)),
+            lineWidth=5,
+            closeShape=False,
+            lineColor="black",
+            units='cm'
+        )
+        back_mask = visual.TextStim(self.win, text='', units='cm', height=3, alignHoriz='center', alignVert='center', color=(-1, -1, -1))
+        prime = visual.TextStim(self.win, text='', units='cm', height=3, alignHoriz='center', alignVert='center', color=(-1, -1, -1))
+        forward_mask = visual.TextStim(self.win, text='', units='cm', height=3, alignHoriz='center', alignVert='center', color=(-1, -1, -1))
+        target = visual.TextStim(self.win, text='', units='cm', height=3, alignHoriz='center', alignVert='center', color=(-1, -1, -1))
+
+        return fixation, back_mask, prime, forward_mask, target
+
+    def mask_generator(self, mask_char=None, total=None, mask_size=None):
+        if mask_char == None:
+            mask_char = self.mask_char
+        if total == None:
+            total = self.totaltrials_n
+        if mask_size == None:
+            mask_size = self.mask_size
+        mask_list = np.random.choice(mask_char, replace=True, size=(total, mask_size))
+        mask_list = ["".join(mask_list[i]) for i in range(total)]
+        mask_list = pd.DataFrame({
+            'mask' : mask_list
+        })
+
+        return mask_list
+
+    def endFrames(self):
+        # Calculate the total duration
+        total_duration_f = sum(list(self.frame_paradigm.values()))
+
+        # Calculate frame end
+        fixation_end = self.frame_paradigm['fixation']
+        back_mask_end = fixation_end + self.frame_paradigm['back_mask']
+        prime_end = back_mask_end + self.frame_paradigm['prime']
+        forward_mask_end = prime_end + self.frame_paradigm['forward_mask']
+
+        # Create Dictionary
+        end_frames = {'fixation_end' : fixation_end, 'back_mask_end' : back_mask_end, 'prime_end' : prime_end, 'forward_mask_end' : forward_mask_end}
+
+        return end_frames, total_duration_f
+
+    def instructions(self, full):
         # Verify if a window is already created
         try:
             self.win
         except AttributeError:
             self.win = self.set_window()
 
+        # Key response load
+        key_response = self.kb_key_response
+        concrete_key = key_response['concrete']
+        abstract_key = key_response['abstract']
+
         # Title
         studyTitle = 'Cross-Language Associative Priming Effect Study'
 
-        # The versions of the introduction according to language choice
-        textPor = """
-        Este estudo tem objetivo de investigar as bases cognitivas do bilinguismo em brasileiros falantes da língua portuguesa e inglesa.
-
-        Para isso, o experimento é constituído da exposição de palavras (em português ou inglês) na tela do computador. Para cada palavra exposta na tela, você tem o objetivo de responder se ela representa um conceito concreto (animais, objetos, alimentos…) ou um conceito abstrato (ações, sentimentos, adjetivos…):
-
-        - Conceito concreto (ex.: gato): pressione a tecla “{}” no teclado.
-        - Conceito abstrato (ex.: chover): pressione a tecla “{}” no teclado.
-
-        Antes do período de avaliação, você participará de um período de treinamento constituído de 50 palavras. As primeiras 25 palavras serão em português, seguida por 25 palavras em inglês. 
-
-        Por favor, quando estiver pronto, pressione a tecla “Enter” no teclado para iniciar o período de treinamento.
-        """.format('a', 'b')
+        # Load the instructions according to language choice
+        textPor = open(r'.\support_material\introductionTextPor.txt', 'r', encoding='utf8').read().format(concrete_key=concrete_key, abstract_key=abstract_key)
 
         textEng = """
         It's not ready yet.
         """
 
-        # Verify what is the correct idiom of the introduction
+        # Verify what is the correct idiom of the instructions
         textLang = self.language_order[:3]
 
         # Condition statement to choose the text's verion
         if textLang == 'Por':
             _intText = textPor
+
+        # Change elif para a textEng
         elif textLang == 'Eng':
-            _intText = textEng
+            _intText = textPor
 
-        intText = visual.TextStim(self.win, text=_intText, units='norm', color=(-1, -1, -1))
-        # intText.setSize((1.8, 1.8), units='norm')
-        intText.size = (2, 2)
+        title = visual.TextStim(self.win, text=studyTitle, units='norm', pos=(0, 0.8), color=(-1, -1, -1), wrapWidth=1.75)
+        intText = visual.TextStim(self.win, text=_intText, units='norm', alignText='left', height=0.07, pos=(0.0, -0.12), wrapWidth=1.75, color=(-1, -1, -1))
 
-        intText.autoDraw = True
+        # Create local kb
+        intKb = keyboard.Keyboard()
 
+        # Loop to re-draw the text
+        while True:
+            # Draw the introduction with the title
+            title.draw(), intText.draw()
+            self.win.flip()
+
+            # Record key:
+            key = intKb.getKeys(keyList=('return', 'backspace'))
+
+            if key:
+                if key[0].name == 'return':
+                    if not full:
+                        self.win.close()
+                        return True
+                    else:
+                        return True
+                elif key[0].name == 'backspace':
+                    if not full:
+                        self.win.close()
+                        return False
+                    else:
+                        return False
+
+    def startPractice(self, full):
+        if not full:
+            self.win = self.set_window()
+
+        # Try window:
+        try:
+            self.win
+        except AttributeError:
+            self.win = self.set_window()
+
+        # Load the targets for practice
+        trialsN = self.practiceLeng
+
+        if trialsN % 2 != 0:
+            raise Exception('The length of practice is not even, please change the length.')
+ 
+        if self.subject_n % 2 == 0:
+            EngTarg = self.first_sequence
+            PorTarg = self.second_sequence
+            EngTarg = EngTarg[EngTarg['class'] == 'control'][:int(trialsN / 2)].reset_index(drop=True)
+            PorTarg = PorTarg[PorTarg['class'] == 'control'][:int(trialsN / 2)].reset_index(drop=True)
+            firstLang = 'Português'
+            secondLang = 'English'
+        else:
+            PorTarg = self.first_sequence
+            EngTarg = self.second_sequence
+            EngTarg = EngTarg[EngTarg['class'] == 'control'][:int(trialsN / 2)].reset_index(drop=True)
+            PorTarg = PorTarg[PorTarg['class'] == 'control'][:int(trialsN / 2)].reset_index(drop=True)
+            firstLang = 'English'
+            secondLang = 'Português'
+
+        # Create random prime
+        def createRandomPrime():
+            randomPrimeList = []
+            for i in range(50):
+                # Choose the number of letters on the prime
+                prime_leng = int(np.random.choice(range(3, 9), size=1))
+                randomPrime = "".join(np.random.choice(self.mask_char, size=prime_leng))
+                randomPrimeList.append(randomPrime)
+
+            return randomPrimeList
+
+        randomPrime = createRandomPrime()
+
+        # Create mask
+        mask_df = self.mask_generator(total=50)
+
+        # Create prime-target data frame
+        def target_df(PorTarg=PorTarg, EngTarg=EngTarg):
+            if self.subject_n % 2 == 0:
+                PorTarg = PorTarg[['target_por', 'correct_response']]
+                PorTarg.rename(columns={'target_por' : 'target'}, inplace=True)
+                EngTarg = EngTarg[['target_eng', 'correct_response']]
+                EngTarg.rename(columns={'target_eng' : 'target'}, inplace=True)
+
+                target_df = PorTarg.append(EngTarg).reset_index(drop=True)
+
+                return target_df
+
+            else:
+                PorTarg = PorTarg[['target_por', 'correct_response']]
+                PorTarg.rename(columns={'target_por' : 'target'}, inplace=True)
+                EngTarg = EngTarg[['target_eng', 'correct_response']]
+                EngTarg.rename(columns={'target_eng' : 'target'}, inplace=True)
+
+                target_df = EngTarg.append(PorTarg).reset_index(drop=True)
+
+                return target_df
+
+        target_df = target_df() 
+
+        # Create text objects
+        self.fixation, self.back_mask, self.prime, self.forward_mask, self.target = self.stimulus_generator()
+
+        end_frames, total_f = self.endFrames()
+
+        # Create practice KB
+        practiceKb = keyboard.Keyboard()
+
+        # Create show language TextStim
+        LangTextF = visual.TextStim(self.win, text=firstLang, units='norm', height=.2, color=(-1, -1, -1))
+        LangTextS = visual.TextStim(self.win, text=secondLang, units='norm', height=.2, color=(-1, -1, -1))
+
+        # Display language of the trial:
+        def showLangTrial(StimText):
+            StimText.draw()
+            self.win.flip()
+            core.wait(2)
+
+        # EXPERIMENT LOOP
+        for trialN in np.arange(trialsN):
+            # Display the language of the trail 
+            if trialN == 0:
+                showLangTrial(LangTextF)
+            elif trialN == (int(trialsN / 2) - 1):
+                showLangTrial(LangTextS)
+
+            # Show fixation cross
+            self.fixation.setAutoDraw(True)
+            self.win.flip()
+            self.fixation.draw()
+
+            # Break to prepare the stimulus while the fixation cross is draw
+            stimPrep = core.StaticPeriod(screenHz=self.monDict['monitor_frequency'], win=self.win, name='Stimulus Preparation Interval')
+            stimPrep.start((self.timeparadigm['fixation'] / 1000))
+
+            # STIMULUS PREPARATION
+            self.back_mask.text = mask_df['mask'][trialN]
+            self.prime.text = randomPrime[trialN]
+            self.forward_mask.text = mask_df['mask'][trialN]
+            self.target.text = target_df['target'][trialN]
+
+            # Complete the preparation period with a frame remaning to finish the time.
+            stimPrep.complete(), self.fixation.setAutoDraw(False)
+
+            for frameN in np.arange(end_frames['fixation_end'] - 1, total_f + 1):
+                # FIXATION DRAW, the stimuli will be draw for one frame to finish the preparation interval
+                if frameN < end_frames['fixation_end']:
+                    self.fixation.draw()
+
+                # BACK MASK DRAW
+                elif frameN < end_frames['back_mask_end']:
+                    self.back_mask.draw()
+
+                # PRIME DRAW                  
+                elif frameN < end_frames['prime_end']:
+                    self.prime.draw()
+
+                # FORWARD MASK DRAW
+                elif frameN < end_frames['forward_mask_end']:
+                    self.forward_mask.draw()
+
+                else:
+                    # DRAW TARGET
+                    self.target.draw()
+
+                    # REDRAW TARGET LOOP AND WAIT FOR KEY
+                    key = practiceKb.waitKeys(keyList=('z', 'm'), stimDraw=self.target)
+
+                    # If the response was incorrect play error sound
+                    if key.name != target_df['correct_response'][trialN]:
+                        playsound(r'.\support_material\incorrect.mp3')
+
+                self.win.flip()
+
+        if not full:
+            self.win.stop()
+            return True
+
+        else:
+            return True
+
+    def endPractice(self, full):
+        if not full:
+            self.win = self.set_window()
+
+        try:
+            self.win
+        except AttributeError:
+            self.win = self.set_window()
+
+        # Load texts:
+        if self.language_order[:3] == 'Por':
+            _endPracText = open(r'.\support_material\endPracticePor.txt', 'r', encoding='utf8').read()
+            _endText = """Por favor, pressione a tecla "Enter" no teclado para começar o período de avaliação."""
+        elif self.language_order[:3] == 'Eng':
+            _endText = """Por favor, pressione a tecla "Enter" no teclado para começar o período de avaliação."""
+            _endPracText = open(r'.\support_material\endPracticePor.txt', 'r', encoding='utf8').read()
+
+        titleText = visual.TextStim(self.win, text='End of Practice', color=(-1, -1, -1), units='norm', wrapWidth=1.8, alignText='center', height=0.15, pos=(0, 0.8))
+
+        endPracText = visual.TextStim(self.win, text=_endPracText, color=(-1, -1, -1), units='norm', wrapWidth=1.8, alignText='left', height=0.1, pos=(0, 0.2))
+
+        countdownText = visual.TextStim(self.win, text='', color=(-1, -1, -1), units='norm', wrapWidth=1.8, alignText='center', height=0.3, pos=(0, -0.5))
+
+        countdown = core.CountdownTimer(60)
+
+        def display_countdown():
+            countdown.reset()
+            self.kb.start()
+            titleText.autoDraw = True
+            endPracText.autoDraw = True
+            stop = False
+            for i in range(1, -1, -1):
+                if not stop: 
+                    countdown.reset()
+                    while countdown.getTime() > 0.0:
+                        sec = int(np.around(countdown.getTime(), 0))
+                        if sec > 59:
+                            time = '{}:00'.format(i+1)
+                        elif sec < 10:
+                            time = '{}:0{}'.format(i, sec)
+                        else:
+                            time = '{}:{}'.format(i, sec)
+
+                        countdownText.text = time
+                        countdownText.draw()
+                        self.win.flip()
+
+                        key = self.kb.getKeys(keyList=('return'))
+
+                        if key:
+                            if key[0].name == 'return':
+                                stop = True
+                                break
+
+                else:
+                    titleText.autoDraw = False
+                    endPracText.autoDraw = False
+                    pass
+
+            if not stop:
+                endText = visual.TextStim(self.win, text=_endText, color=(-1, -1, -1), units='norm', wrapWidth=1.8, alignText='center', height=0.1)
+
+                endText.draw()
+                self.win.flip()
+                self.kb.waitKeys(stimDraw=endText, keyList=('return'))
+                self.kb.stop()
+
+        display_countdown()
+
+        if not full:
+            self.win.close()
+            return True
+
+        else:
+            return True
+
+    def interLanguageBreak(self, full):
+        if not full:
+            self.win = self.set_window()
+
+        try:
+            self.win
+        except AttributeError:
+            self.win = self.set_window()
+
+        # Load texts:
+        if self.language_order[:3] == 'Por':
+            _interText = open(r'.\support_material\interLanguageTextPor.txt', 'r', encoding='utf8').read()
+            _endText = """Por favor, pressione a tecla "Enter" no teclado para começar o período de avaliação da próxima língua."""
+        elif self.language_order[:3] == 'Eng':
+            _interText = open(r'.\support_material\interLanguageTextPor.txt', 'r', encoding='utf8').read()
+            _endText = """Por favor, pressione a tecla "Enter" no teclado para começar o período de avaliação da próxima lingua."""
+
+        titleText = visual.TextStim(self.win, text='End of the First Language Evaluation', color=(-1, -1, -1), units='norm', wrapWidth=1.8, alignText='center', height=0.15, pos=(0, 0.8))
+
+        endPracText = visual.TextStim(self.win, text=_interText, color=(-1, -1, -1), units='norm', wrapWidth=1.8, alignText='left', height=0.1, pos=(0, 0.2))
+
+        countdownText = visual.TextStim(self.win, text='', color=(-1, -1, -1), units='norm', wrapWidth=1.8, alignText='center', height=0.3, pos=(0, -0.5))
+
+        countdown = core.CountdownTimer(60)
+
+        def display_countdown():
+            countdown.reset()
+            self.kb.start()
+            titleText.autoDraw = True
+            endPracText.autoDraw = True
+            stop = False
+            for i in range(4, -1, -1):
+                if not stop: 
+                    countdown.reset()
+                    while countdown.getTime() > 0.0:
+                        sec = int(np.around(countdown.getTime(), 0))
+                        if sec > 59:
+                            time = '{}:00'.format(i+1)
+                        elif sec < 10:
+                            time = '{}:0{}'.format(i, sec)
+                        else:
+                            time = '{}:{}'.format(i, sec)
+
+                        countdownText.text = time
+                        countdownText.draw()
+                        self.win.flip()
+
+                        key = self.kb.getKeys(keyList=('return'))
+
+                        if key:
+                            if key[0].name == 'return':
+                                stop = True
+                                break
+
+                else:
+                    titleText.autoDraw = False
+                    endPracText.autoDraw = False
+                    pass
+
+            if not stop:
+                endText = visual.TextStim(self.win, text=_endText, color=(-1, -1, -1), units='norm', wrapWidth=1.8, alignText='center', height=0.1)
+
+                endText.draw()
+                self.win.flip()
+                self.kb.waitKeys(stimDraw=endText, keyList=('return'))
+                self.kb.stop()
+
+        display_countdown()
+
+        if not full:
+            self.win.close()
+            return True
+
+        else:
+            return True
+
+    def experimentEnd(self, full):
+        if not full:
+            self.win = self.set_window()
+
+        try:
+            self.win
+        except AttributeError:
+            self.win = self.set_window()
+
+        # Load texts:
+        if self.language_order[:3] == 'Por':
+            # _endPracText = open(r'.\support_material\endPracticePor.txt', 'r', encoding='utf8').read()
+            _endText = open(r'.\support_material\endExpTextPor.txt', 'r', encoding='utf8').read() 
+        elif self.language_order[:3] == 'Eng':
+            _endText = open(r'.\support_material\endExpTextPor.txt', 'r', encoding='utf8').read()
+            # _endPracText = open(r'.\support_material\endPracticePor.txt', 'r', encoding='utf8').read()
+
+        title = visual.TextStim(self.win, text='End Of The Experiment', units='norm', pos=(0, 0.8), color=(-1, -1, -1), wrapWidth=1.75, height=0.15)
+        endText = visual.TextStim(self.win, text=_endText, units='norm', alignText='left', height=0.1, pos=(0.0, 0), wrapWidth=1.75, color=(-1, -1, -1))
+
+        title.autoDraw = True
+        endText.autoDraw = True
+
+        title.draw()
+        endText.draw()
         self.win.flip()
 
-        intText.draw()
-        core.wait(3)
-        core.quit()
+        while True:
+            self.kb.start()
+            
+            key = self.kb.getKeys(keyList=('return'))
+
+            if key:
+                if key[0].name == 'return':
+                    break
+
+        self.win.close()
+
+        return True
 
     def startTrial(self, order, full):
         """:Parameters:
@@ -607,7 +1005,9 @@ class Experiment(object):
             while True:
                 try:
                     limit = int(input('Please, insert the number of trials: '))
+                    self.win = self.set_window()
                     break
+
                 except ValueError:
                     print("Oops!  That was no valid number.  Try again...")
                     
@@ -618,25 +1018,16 @@ class Experiment(object):
             self.win = self.set_window()
 
         # CREATE STIMULUS OBJECT
-        def stimulus_generator():
-            fixation = visual.ShapeStim(self.win, 
-                vertices=((0, -0.5), (0, 0.5), (0,0), (-0.5,0), (0.5, 0)),
-                lineWidth=5,
-                closeShape=False,
-                lineColor="black",
-                units='cm'
-            )
-            back_mask = visual.TextStim(self.win, text='', units='cm', height=3, alignHoriz='center', alignVert='center', color=(-1, -1, -1))
-            prime = visual.TextStim(self.win, text='', units='cm', height=3, alignHoriz='center', alignVert='center', color=(-1, -1, -1))
-            forward_mask = visual.TextStim(self.win, text='', units='cm', height=3, alignHoriz='center', alignVert='center', color=(-1, -1, -1))
-            target = visual.TextStim(self.win, text='', units='cm', height=3, alignHoriz='center', alignVert='center', color=(-1, -1, -1))
+        try:
+            self.fixation, self.back_mask, self.prime, self.forward_mask, self.target
+            if not full:
+                self.fixation, self.back_mask, self.prime, self.forward_mask, self.target = self.stimulus_generator()
 
-            return fixation, back_mask, prime, forward_mask, target
-
-        self.fixation, self.back_mask, self.prime, self.forward_mask, self.target = stimulus_generator()
+        except AttributeError:
+            self.fixation, self.back_mask, self.prime, self.forward_mask, self.target = self.stimulus_generator()
 
         # CREATE TRIAL KEYBOARD:
-        trial_kb = keyboard.Keyboard(waitForStart=False)
+        trial_kb = keyboard.Keyboard(waitForStart=True)
 
         # CREATE L1_L2 VARIABLE AND LOAD PRIME-TARGET SEQUENCE
         language_order = self.language_order.split('-')
@@ -664,15 +1055,10 @@ class Experiment(object):
         columns_pt = list(prime_target_df.columns)
 
         # DETERMINE THE FRAME DURATION
-        total_duration_f = sum(list(self.frame_paradigm.values()))
-        fixation_end = self.frame_paradigm['fixation']
-        back_mask_end = fixation_end + self.frame_paradigm['back_mask']
-        prime_end = back_mask_end + self.frame_paradigm['prime']
-        forward_mask_end = prime_end + self.frame_paradigm['forward_mask']
-        end_frames = {'fixation_end' : fixation_end, 'back_mask_end' : back_mask_end, 'prime_end' : prime_end, 'forward_mask_end' : forward_mask_end}
+        end_frames, total_f = self.endFrames()
 
         # LOAD MASK DATA FRAME
-        mask_df = self.mask_df
+        mask_df = self.mask_generator()
 
         # CREATE TRIALS DATA FRAME
         trials_data = pd.DataFrame(columns=['prime', 'target', 'group', 'pair_index', 'mask', 'l1_l2',
@@ -681,12 +1067,34 @@ class Experiment(object):
 
         columns_trial = list(trials_data.columns)
 
+        # Decide what text will show before the start of the evalutation
+        if order == 'first':
+            if self.language_order[:3] == 'Por':
+                _prepText = 'English'
+            elif self.language_order[:3] == 'Eng':
+                _prepText = "Português"
+        elif order == 'second':
+            langOrder = self.language_order.split('-')[1]
+            if langOrder[:3] == 'Por':
+                _prepText = 'English'
+            elif langOrder[:3] == 'Eng':
+                _prepText = "Português"
+
+        prepText = visual.TextStim(self.win, text=_prepText, units='norm', height=.3, color=(-1, -1, -1))
+
+        def showLangTrial(StimText):
+            StimText.draw()
+            self.win.flip()
+            core.wait(2)
+
+        showLangTrial(prepText)
+
         # EXPERIMENT LOOP
         for trialN in np.arange(self.language_n): 
             # Show fixation cross
             self.fixation.setAutoDraw(True)
-            self.win.flip()
             self.fixation.draw()
+            self.win.flip()
 
             # Break to prepare the stimulus while the fixation cross is draw
             stimPrep = core.StaticPeriod(screenHz=self.monDict['monitor_frequency'], win=self.win, name='Stimulus Preparation Interval')
@@ -706,31 +1114,30 @@ class Experiment(object):
             # Complete the preparation period with a frame remaning to finish the time.
             stimPrep.complete(), self.fixation.setAutoDraw(False)
 
-            for frameN in np.arange(fixation_end - 1, total_duration_f + 1):
+            for frameN in np.arange(end_frames['fixation_end'] - 1, total_f + 1):
                 # FIXATION DRAW, the stimuli will be draw for one frame to finish the preparation interval
-                if frameN < fixation_end:
+                if frameN < end_frames['fixation_end']:
                     self.fixation.draw()
 
                 # BACK MASK DRAW
-                if frameN == fixation_end:
+                elif frameN == end_frames['fixation_end']:
                     back_mask_onset = self.monitorclock.getTime()
                     self.back_mask.draw()
-                    
-                elif frameN < back_mask_end:
+                elif frameN < end_frames['back_mask_end']:
                     self.back_mask.draw()
 
                 # PRIME DRAW
-                elif frameN == back_mask_end:
+                elif frameN == end_frames['back_mask_end']:
                     prime_onset = self.monitorclock.getTime()
                     self.prime.draw()                    
-                elif frameN < prime_end:
+                elif frameN < end_frames['prime_end']:
                     self.prime.draw()
 
                 # FORWARD MASK DRAW
-                elif frameN == prime_end:
+                elif frameN == end_frames['prime_end']:
                     forward_mask_onset = self.monitorclock.getTime()
                     self.forward_mask.draw()
-                elif frameN < forward_mask_end:
+                elif frameN < end_frames['forward_mask_end']:
                     self.forward_mask.draw()
 
                 else:
@@ -738,7 +1145,6 @@ class Experiment(object):
                     self.target.draw()
 
                     # RESET KB CLOCK AND DEFINE TARGET ONSET
-                    trial_kb.clock.reset()
                     target_onset = self.monitorclock.getTime()
 
                     # REDRAW TARGET LOOP AND WAIT FOR KEY
@@ -749,6 +1155,10 @@ class Experiment(object):
                     if key is None:
                         print("The key variable is equal to None")
                         key.name, key.rt, key.tDown = (None, None, None)
+
+                    # Play incorrect sound
+                    if key.name != prime_target_df['correct_response'][trialN]:
+                        playsound(r'.\support_material\incorrect.mp3')
 
                     # COLLECT TRIAL DATA
                     time_data = {
@@ -795,10 +1205,12 @@ class Experiment(object):
                 correct_list.append(False)
         trials_data['correct'] = correct_list
 
-        return trials_data
+        if not full:
+            self.win.close()
+            return trials_data
 
-    def trialBreak(self):
-        pass
+        else:
+            return trials_data
 
     def startExperiment(self, full=None, save=None):
         # QUESTION THE USER IF HE WANT TO SAVE THE DATA THAT WILL BE COLLECTED 
@@ -843,22 +1255,30 @@ class Experiment(object):
 
         # IF THE EXPERIMENT IS SET TO FULLCROSS THAN
         if self.fullcross:
+            # Show instructions
+            _playPractice = self.instructions(full)
 
+            # If play practice is True than play the practice, else: skip the pratice
+            if _playPractice:
+                # Start practice
+                _pracComplete = self.startPractice(full)
+
+                # Show end of practice
+                _endPracComplete = self.endPractice(full)
+
+            # Start First Part of the Trial
             data_first_trial = self.startTrial('first', full)
 
-            # REMEMBER OF DELETE LOOP
-            while True:
-                value_horz = str(input('Do you want to proceed to the next language trial? (y/n)\n')).lower()
-                if value_horz == 'n':
-                    self.win.close()
-                    return data_first_trial
-                elif value_horz == 'y':
-                    break
-                else:
-                    print('The command typed is not valid, please answer with "y" to continue or "n" to stop.\nYour answer was: "{}"'.format(value_horz))
+            # inter-language break
+            _interLangBreakComplete = self.interLanguageBreak(full)
 
+            # Start Second Part of the Trial
             data_second_trial = self.startTrial('second', full)
 
+            # Show End Text
+            _endExpComplete = self.experimentEnd(full)
+
+            # Create the dataframe use all the trial information
             data_trial_final = data_first_trial.append(data_second_trial).reset_index(drop=True)
 
             # IF SAVE IS TRUE THAN THE SAVE PROCEDURE WILL BEGIN
@@ -895,6 +1315,10 @@ class Experiment(object):
                                     with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(data_trial_final)
                                     break
 
+                                # Don't print data
+                                else:
+                                    break
+
                             # CLOSE WINDOW AND RETURN DATA
 
                             self.win.close()
@@ -920,6 +1344,10 @@ class Experiment(object):
                                     with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(data_trial_final)
                                     break
 
+                                # Don't print data
+                                else:
+                                    break
+
                             self.win.close()
 
                             return data_trial_final
@@ -943,6 +1371,10 @@ class Experiment(object):
                             with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(data_trial_final)
                             break
 
+                        # Don't print data
+                        else:
+                            break
+
                     # CLOSE THE WINDOW AND RETURN THE DATA
 
                     self.win.close()
@@ -951,7 +1383,6 @@ class Experiment(object):
 
             # USER DON'T WANT TO SAVE THE DATA
             else:
-
                 # QUESTION TO PRINT OUT THE DATA
                 while True:
                     printdata = str(input('Do you want to print out the data collected?\n(y/n): ')).lower()
@@ -966,6 +1397,9 @@ class Experiment(object):
                         with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(data_trial_final)
                         break
 
+                    # Don't print data
+                    else:
+                        break
                 # CLOSE THE WINDOW AND RETURN THE DATA
 
                 self.win.close()
@@ -974,7 +1408,7 @@ class Experiment(object):
 
         # NOT FULLCROSS
         else:
-            data_trial_final = self.startTrial('first', full)
+            # data_trial_final = self.startTrial('first', full)
 
             # IF SAVE IS TRUE THAN BEGIN THE SAVE PROCEDURE
             if save:

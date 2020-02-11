@@ -5,3 +5,4 @@ pygame
 psychopy
 seaborn
 pandas
+playsound
