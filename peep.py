@@ -17,7 +17,15 @@ class Experiment(object):
     def __init__(self, n=None, mask_case='upper', pairs_n=50, fullcross=True, conditions_n=3, mask_size=8, onelanguageorder=None,
     fullscreen=False, timeparadigm=None, kb_keys=None, save=None, practiceLeng=50):
         """:Parameters:
-        fullcross will ditermine if the effect will be studied in the two ways. 
+        fullcross: will ditermine if the effect will be studied in the two ways.
+        n: the number of the subject, will ditermine the sequence of trial and the language of intructions.
+        mask_case: The case of the mask's letters
+        pairs_n: The number of prime-target pairs to use in the study, it have to be a even number.
+        conditions_n: The number of conditions that the subject will be tested
+        mask_size: The number of letter that the masks will have
+        onelanguageorder: Only if fullcross will be False
+        timeparadigm: The correct is to be set to None, but you can use a dictionary of 4 key-values pairs.
+        practiceLeng: The number of trials in the practice.
         """
 
 # LOAD THE JSON FILE WITH THE MONITOR SETTINGS
@@ -274,6 +282,7 @@ class Experiment(object):
 
         self.first_sequence, self.second_sequence = words_sequence()
 
+        self.startPractice(False)
 # QUESTION THE USER IF HIS WANT TO START THE EXPERIMENT
         while True:
             startexp = str(input('Do you want to begin the expriment?\n(y/n): ')).lower()
@@ -667,17 +676,25 @@ class Experiment(object):
             raise Exception('The length of practice is not even, please change the length.')
  
         if self.subject_n % 2 == 0:
-            EngTarg = self.first_sequence
-            PorTarg = self.second_sequence
-            EngTarg = EngTarg[EngTarg['class'] == 'control'][:int(trialsN / 2)].reset_index(drop=True)
-            PorTarg = PorTarg[PorTarg['class'] == 'control'][:int(trialsN / 2)].reset_index(drop=True)
+            _EngTarg = self.first_sequence
+            _PorTarg = self.second_sequence
+            EngTarg = _EngTarg[_EngTarg['class'] == 'control'][:int(trialsN / 2)]
+            PorTarg = _PorTarg[_PorTarg['class'] == 'control'][:int(trialsN / 2)]
+            EngTarg.set_index(EngTarg['original_index'], drop=True, inplace=True)
+            PorTarg.set_index(PorTarg['original_index'], drop=True, inplace=True)
+            EngTarg.sort_index(axis=0, ignore_index=True, inplace=True)
+            PorTarg.sort_index(axis=0, ignore_index=True, inplace=True)
             firstLang = 'Português'
             secondLang = 'English'
         else:
-            PorTarg = self.first_sequence
-            EngTarg = self.second_sequence
-            EngTarg = EngTarg[EngTarg['class'] == 'control'][:int(trialsN / 2)].reset_index(drop=True)
-            PorTarg = PorTarg[PorTarg['class'] == 'control'][:int(trialsN / 2)].reset_index(drop=True)
+            _PorTarg = self.first_sequence
+            _EngTarg = self.second_sequence
+            EngTarg = _EngTarg[_EngTarg['class'] == 'control'][:int(trialsN / 2)]
+            PorTarg = _PorTarg[_PorTarg['class'] == 'control'][:int(trialsN / 2)]
+            EngTarg.set_index(EngTarg['original_index'], drop=True, inplace=True)
+            PorTarg.set_index(PorTarg['original_index'], drop=True, inplace=True)
+            EngTarg.sort_index(axis=0, ignore_index=True, inplace=True)
+            PorTarg.sort_index(axis=0, ignore_index=True, inplace=True)
             firstLang = 'English'
             secondLang = 'Português'
 
@@ -700,9 +717,9 @@ class Experiment(object):
         # Create prime-target data frame
         def target_df(PorTarg=PorTarg, EngTarg=EngTarg):
             if self.subject_n % 2 == 0:
-                PorTarg = PorTarg[['target_por', 'correct_response']]
+                PorTarg = PorTarg[['target_por', 'correct_response', 'pair_index']]
                 PorTarg.rename(columns={'target_por' : 'target'}, inplace=True)
-                EngTarg = EngTarg[['target_eng', 'correct_response']]
+                EngTarg = EngTarg[['target_eng', 'correct_response', 'pair_index']]
                 EngTarg.rename(columns={'target_eng' : 'target'}, inplace=True)
 
                 target_df = PorTarg.append(EngTarg).reset_index(drop=True)
@@ -1212,7 +1229,7 @@ class Experiment(object):
         else:
             return trials_data
 
-    def startExperiment(self, full=None, save=None):
+    def startExperiment(self, full=True, save=None):
         # QUESTION THE USER IF HE WANT TO SAVE THE DATA THAT WILL BE COLLECTED 
         if save is None:
             while True:
@@ -1454,9 +1471,7 @@ class Experiment(object):
 
                 return data_trial_final
 
-# test = Experiment(n=0, save=False, fullscreen=True)
-test = Experiment(n=0, fullscreen=False)
-# print(test)
+Experiment(n=1, fullscreen=False)
 
 ##############################################################################################################################################################################
 
@@ -1904,7 +1919,3 @@ class StatisticalAnalysis():
         axes[1, 1].legend(['control', 'incongruent', 'congruentn'])
 
         plt.show()
-
-# sa = StatisticalAnalysis(n=100, save=False, view_data=True)
-# print(sa.remove_errors(df=sa.subject_df))
-# with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(StatisticalAnalysis(n=6, save=False).full_preprocess_data)
