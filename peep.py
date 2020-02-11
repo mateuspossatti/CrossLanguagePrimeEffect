@@ -283,6 +283,7 @@ class Experiment(object):
         self.first_sequence, self.second_sequence = words_sequence()
 
         self.startPractice(False)
+
 # QUESTION THE USER IF HIS WANT TO START THE EXPERIMENT
         while True:
             startexp = str(input('Do you want to begin the expriment?\n(y/n): ')).lower()
@@ -1471,7 +1472,7 @@ class Experiment(object):
 
                 return data_trial_final
 
-Experiment(n=1, fullscreen=False)
+Experiment(n=None, fullscreen=True)
 
 ##############################################################################################################################################################################
 
