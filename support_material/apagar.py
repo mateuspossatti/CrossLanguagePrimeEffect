@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from psychopy import visual, core, monitors, event
 from psychopy.hardware import keyboard
 import pandas as pd
@@ -28,4 +29,19 @@ import numpy as np
 # print(df.columns)
 
 # df.to_csv(r'.\trials_data\subject-2.csv')
+=======
+from psychopy import visual, core, event, monitors #import some libraries from PsychoPy
+
+from psychopy.preferences import Preferences
+# Set preferences
+prefs = Preferences()
+prefs.hardware['audioLib'] = ['PTB']
+
+from psychopy.sound.backend_ptb import SoundPTB
+
+mysound = SoundPTB('A')
+
+mysound.play()
+
+>>>>>>> sa_igdevelop
 
