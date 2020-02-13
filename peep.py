@@ -13,6 +13,8 @@ except ModuleNotFoundError:
 
 import keyboard_mod as keyboard
 
+from psychopy.hardware import emulator
+
 class Experiment(object):
     def __init__(self, n=None, mask_case='upper', pairs_n=50, fullcross=True, conditions_n=3, mask_size=8, onelanguageorder=None,
     fullscreen=False, timeparadigm=None, kb_keys=None, save=None, practiceLeng=50):
@@ -1162,6 +1164,8 @@ class Experiment(object):
 
                     # RESET KB CLOCK AND DEFINE TARGET ONSET
                     target_onset = self.monitorclock.getTime()
+
+                    # RESPONSE EMULATOR
 
                     # REDRAW TARGET LOOP AND WAIT FOR KEY
                     key = trial_kb.waitKeys(keyList=('z', 'm'), stimDraw=self.target)
