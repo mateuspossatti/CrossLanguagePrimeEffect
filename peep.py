@@ -12,7 +12,7 @@ except ModuleNotFoundError:
     # sb.run('pip3 install -r requirements.txt', shell=True)
     print('Please, install the necessary modules with the command "pip3 install -r requirements.txt" on the command line')
 
-import keyboard_mod as keyboard
+import support_material.keyboard_mod as keyboard
 
 class Experiment(object):
     def __init__(self, n=None, mask_case='upper', pairs_n=50, fullcross=True, conditions_n=3, mask_size=8, onelanguageorder=None,
