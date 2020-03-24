@@ -3,3 +3,4 @@ env/
 peep_project.code-workspace
 .vscode/
 peep_venv/
+__pycache__/
