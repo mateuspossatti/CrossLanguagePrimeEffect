@@ -1,0 +1,5 @@
+.tmp.drivedownload/
+env/
+peep_project.code-workspace
+.vscode/
+peep_venv/
