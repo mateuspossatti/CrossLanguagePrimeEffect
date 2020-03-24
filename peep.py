@@ -30,20 +30,25 @@ class Experiment(object):
         """
 
 # LOAD THE JSON FILE WITH THE MONITOR SETTINGS
-        monitorSets = open(r'.\support_material\monitor_settings.json', 'r')
-        self.monDict = json.load(monitorSets)
+        try:
+            monitorSets = open(r'.\support_material\monitor_settings.json', 'r')
+            self.monDict = json.load(monitorSets)
+
+        except FileNotFoundError:
+            monitorSets = open(r'.\support_material\monitor_settings_blank.json', 'r')
+            self.monDict = json.load(monitorSets)
 
         # If there is no settings, a function will be executed that will question the user to set the settings
-        if self.monDict['monitor_name'] is None:
-            name, width, resol, freq = self.define_mon_settings()
+            if self.monDict['monitor_name'] is None:
+                name, width, resol, freq = self.define_mon_settings()
 
-            self.monDict['monitor_name'] = name
-            self.monDict['monitor_width'] = width
-            self.monDict['monitor_resolution'] = resol
-            self.monDict['monitor_frequency'] = freq
+                self.monDict['monitor_name'] = name
+                self.monDict['monitor_width'] = width
+                self.monDict['monitor_resolution'] = resol
+                self.monDict['monitor_frequency'] = freq
 
-            with open(r'.\support_material\monitor_settings.json', 'w') as monitorSets:
-                json.dump(self.monDict, monitorSets)
+                with open(r'.\support_material\monitor_settings.json', 'w') as monitorSets:
+                    json.dump(self.monDict, monitorSets)
 
 # QUESTION THE USER ABOUT THE VOLUNTEER NUMBER IF IT ISN'T ALREADY DECLARE
         if n is None:
