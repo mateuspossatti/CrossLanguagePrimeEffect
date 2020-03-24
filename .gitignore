@@ -3,3 +3,4 @@ __pycache__/
 .tmp.drivedownload/
 env/
 peep_venv/
+support_material/monitor_settings.json

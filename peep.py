@@ -673,14 +673,16 @@ class Experiment(object):
 
         if trialsN % 2 != 0:
             raise Exception('The length of practice is not even, please change the length.')
- 
+
+        index_list = [np.random.choice(np.arange(25), replace=False, size=25) for _ in range(2)]
+
         if self.subject_n % 2 == 0:
             _EngTarg = self.first_sequence
             _PorTarg = self.second_sequence
             EngTarg = _EngTarg[_EngTarg['class'] == 'control'][:int(trialsN / 2)]
             PorTarg = _PorTarg[_PorTarg['class'] == 'control'][:int(trialsN / 2)]
-            EngTarg.set_index(EngTarg['original_index'], drop=True, inplace=True)
-            PorTarg.set_index(PorTarg['original_index'], drop=True, inplace=True)
+            EngTarg.set_index(index_list[0], drop=True, inplace=True)
+            PorTarg.set_index(index_list[1], drop=True, inplace=True)
             EngTarg.sort_index(axis=0, ignore_index=True, inplace=True)
             PorTarg.sort_index(axis=0, ignore_index=True, inplace=True)
             firstLang = 'Português'
@@ -690,8 +692,8 @@ class Experiment(object):
             _EngTarg = self.second_sequence
             EngTarg = _EngTarg[_EngTarg['class'] == 'control'][:int(trialsN / 2)]
             PorTarg = _PorTarg[_PorTarg['class'] == 'control'][:int(trialsN / 2)]
-            EngTarg.set_index(EngTarg['original_index'], drop=True, inplace=True)
-            PorTarg.set_index(PorTarg['original_index'], drop=True, inplace=True)
+            EngTarg.set_index(index_list[0], drop=True, inplace=True)
+            PorTarg.set_index(index_list[1], drop=True, inplace=True)
             EngTarg.sort_index(axis=0, ignore_index=True, inplace=True)
             PorTarg.sort_index(axis=0, ignore_index=True, inplace=True)
             firstLang = 'English'
@@ -760,7 +762,7 @@ class Experiment(object):
             # Display the language of the trail 
             if trialN == 0:
                 showLangTrial(LangTextF)
-            elif trialN == (int(trialsN / 2) - 1):
+            elif trialN == int(trialsN / 2):
                 showLangTrial(LangTextS)
 
             # Show fixation cross
@@ -1162,8 +1164,6 @@ class Experiment(object):
 
                     # RESET KB CLOCK AND DEFINE TARGET ONSET
                     target_onset = self.monitorclock.getTime()
-
-                    # RESPONSE EMULATOR
 
                     # REDRAW TARGET LOOP AND WAIT FOR KEY
                     key = trial_kb.waitKeys(keyList=('z', 'm'), stimDraw=self.target)
