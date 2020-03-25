@@ -760,7 +760,6 @@ class Experiment(object):
             core.wait(2)
 
         # EXPERIMENT LOOP
-        trialsN = 3
         for trialN in np.arange(trialsN):
             # Display the language of the trail 
             if trialN == 0:
