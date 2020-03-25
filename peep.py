@@ -30,6 +30,7 @@ class Experiment(object):
         """
 
 # LOAD THE JSON FILE WITH THE MONITOR SETTINGS
+        # if there isn't predefined settings, an exception will be called
         try:
             monitorSets = open(r'.\support_material\monitor_settings.json', 'r')
             self.monDict = json.load(monitorSets)
@@ -38,7 +39,7 @@ class Experiment(object):
             monitorSets = open(r'.\support_material\monitor_settings_blank.json', 'r')
             self.monDict = json.load(monitorSets)
 
-        # If there is no settings, a function will be executed that will question the user to set the settings
+            # No predefined settings: a function will be executed that will question the user to set the settings
             if self.monDict['monitor_name'] is None:
                 name, width, resol, freq = self.define_mon_settings()
 
@@ -618,22 +619,19 @@ class Experiment(object):
         studyTitle = 'Cross-Language Associative Priming Effect Study'
 
         # Load the instructions according to language choice
-        textPor = open(r'.\support_material\introductionTextPor.txt', 'r', encoding='utf8').read().format(concrete_key=concrete_key, abstract_key=abstract_key)
+        textPor = open(r'.\support_material\introductionText\introductionTextPor.txt', 'r', encoding='utf8').read().format(concrete_key=concrete_key, abstract_key=abstract_key)
 
-        textEng = """
-        It's not ready yet.
-        """
+        textEng = open(r'.\support_material\introductionText\introductionTextEng.txt', 'r', encoding='utf8').read().format(concrete_key=concrete_key, abstract_key=abstract_key)
 
         # Verify what is the correct idiom of the instructions
         textLang = self.language_order[:3]
 
-        # Condition statement to choose the text's verion
+        # Condition statement to choose the text's version
         if textLang == 'Por':
             _intText = textPor
 
-        # Change elif para a textEng
         elif textLang == 'Eng':
-            _intText = textPor
+            _intText = textEng
 
         title = visual.TextStim(self.win, text=studyTitle, units='norm', pos=(0, 0.8), color=(-1, -1, -1), wrapWidth=1.75)
         intText = visual.TextStim(self.win, text=_intText, units='norm', alignText='left', height=0.07, pos=(0.0, -0.12), wrapWidth=1.75, color=(-1, -1, -1))
@@ -762,6 +760,7 @@ class Experiment(object):
             core.wait(2)
 
         # EXPERIMENT LOOP
+        trialsN = 3
         for trialN in np.arange(trialsN):
             # Display the language of the trail 
             if trialN == 0:
@@ -818,7 +817,7 @@ class Experiment(object):
                 self.win.flip()
 
         if not full:
-            self.win.stop()
+            self.win.close()
             return True
 
         else:
@@ -835,13 +834,16 @@ class Experiment(object):
 
         # Load texts:
         if self.language_order[:3] == 'Por':
-            _endPracText = open(r'.\support_material\endPracticePor.txt', 'r', encoding='utf8').read()
+            _endPracText = open(r'.\support_material\endPracticeText\endPracticePor.txt', 'r', encoding='utf8').read()
             _endText = """Por favor, pressione a tecla "Enter" no teclado para começar o período de avaliação."""
-        elif self.language_order[:3] == 'Eng':
-            _endText = """Por favor, pressione a tecla "Enter" no teclado para começar o período de avaliação."""
-            _endPracText = open(r'.\support_material\endPracticePor.txt', 'r', encoding='utf8').read()
+            _titleText = 'Fim da Prática'
 
-        titleText = visual.TextStim(self.win, text='End of Practice', color=(-1, -1, -1), units='norm', wrapWidth=1.8, alignText='center', height=0.15, pos=(0, 0.8))
+        elif self.language_order[:3] == 'Eng':
+            _endText = """Please press the "Enter" key on the keyboard to start the trial period."""
+            _endPracText = open(r'.\support_material\endPracticeText\endPracticeEng.txt', 'r', encoding='utf8').read()
+            _titleText = 'End of Practice'
+
+        titleText = visual.TextStim(self.win, text=_titleText, color=(-1, -1, -1), units='norm', wrapWidth=1.8, alignText='center', height=0.15, pos=(0, 0.8))
 
         endPracText = visual.TextStim(self.win, text=_endPracText, color=(-1, -1, -1), units='norm', wrapWidth=1.8, alignText='left', height=0.1, pos=(0, 0.2))
 
@@ -911,13 +913,15 @@ class Experiment(object):
 
         # Load texts:
         if self.language_order[:3] == 'Por':
-            _interText = open(r'.\support_material\interLanguageTextPor.txt', 'r', encoding='utf8').read()
-            _endText = """Por favor, pressione a tecla "Enter" no teclado para começar o período de avaliação da próxima língua."""
+            _interText = open(r'.\support_material\interLanguageText\interLanguageTextPor.txt', 'r', encoding='utf8').read()
+            _endText = """Por favor, pressione a tecla "Enter" no teclado para começar o período de avaliação da segunda língua."""
+            _titleText = 'Fim da Avaliação da Primeira Língua'
         elif self.language_order[:3] == 'Eng':
-            _interText = open(r'.\support_material\interLanguageTextPor.txt', 'r', encoding='utf8').read()
-            _endText = """Por favor, pressione a tecla "Enter" no teclado para começar o período de avaliação da próxima lingua."""
+            _interText = open(r'.\support_material\interLanguageText\interLanguageTextEng.txt', 'r', encoding='utf8').read()
+            _endText = """Please press the "Enter" key on the keyboard to start the trial period for the second language."""
+            _titleText = 'End of the First Language Evaluation'
 
-        titleText = visual.TextStim(self.win, text='End of the First Language Evaluation', color=(-1, -1, -1), units='norm', wrapWidth=1.8, alignText='center', height=0.15, pos=(0, 0.8))
+        titleText = visual.TextStim(self.win, text=_titleText, color=(-1, -1, -1), units='norm', wrapWidth=1.8, alignText='center', height=0.15, pos=(0, 0.8))
 
         endPracText = visual.TextStim(self.win, text=_interText, color=(-1, -1, -1), units='norm', wrapWidth=1.8, alignText='left', height=0.1, pos=(0, 0.2))
 
@@ -987,13 +991,13 @@ class Experiment(object):
 
         # Load texts:
         if self.language_order[:3] == 'Por':
-            # _endPracText = open(r'.\support_material\endPracticePor.txt', 'r', encoding='utf8').read()
-            _endText = open(r'.\support_material\endExpTextPor.txt', 'r', encoding='utf8').read() 
+            _endText = open(r'.\support_material\endExperimentText\endExpTextPor.txt', 'r', encoding='utf8').read()
+            _titleText = 'Fim do Experimento' 
         elif self.language_order[:3] == 'Eng':
-            _endText = open(r'.\support_material\endExpTextPor.txt', 'r', encoding='utf8').read()
-            # _endPracText = open(r'.\support_material\endPracticePor.txt', 'r', encoding='utf8').read()
+            _endText = open(r'.\support_material\endExperimentText\endExpTextEng.txt', 'r', encoding='utf8').read()
+            _titleText = 'End of the Experiment'
 
-        title = visual.TextStim(self.win, text='End Of The Experiment', units='norm', pos=(0, 0.8), color=(-1, -1, -1), wrapWidth=1.75, height=0.15)
+        title = visual.TextStim(self.win, text=_titleText, units='norm', pos=(0, 0.8), color=(-1, -1, -1), wrapWidth=1.75, height=0.15)
         endText = visual.TextStim(self.win, text=_endText, units='norm', alignText='left', height=0.1, pos=(0.0, 0), wrapWidth=1.75, color=(-1, -1, -1))
 
         title.autoDraw = True
