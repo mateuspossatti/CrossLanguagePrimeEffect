@@ -51,15 +51,49 @@ class Experiment(object):
                 with open(r'.\support_material\monitor_settings.json', 'w') as monitorSets:
                     json.dump(self.monDict, monitorSets)
 
-# QUESTION THE USER ABOUT THE VOLUNTEER NUMBER IF IT ISN'T ALREADY DECLARE
-        if n is None:
-            while True:
-                try:
-                    n = int(input('Please enter the number of the volunteer: '))
-                    break
+# ASKS THE USER IF HE WANTS TO START THE EXPERIMENT - IF HE WANTS THEN ASKS THE VOLUNTEER'S NUMBER
+        while True:
+            _startexp = str(input('Do you want to begin the expriment?\n(y/n): ')).lower()
+            if _startexp != 'y' and _startexp != 'n':
+                print('The command typed ("{}") is invalid, please type "y" to begin the experiment\nor "n" to continue without starting the experiment.'.format(_startexp))
 
-                except ValueError:
-                    print("Oops!  That was no valid number.  Try again...")
+            # THE USER WANT TO BEGIN THE EXPERIMENT
+            elif _startexp == 'y':
+                self.startexp = True
+
+                # ASKS ABOUT THE VOLUNTEER'S NUMBER
+                if n is None:
+                    while True:
+                        try:
+                            n = int(input('Please enter the number of the volunteer: '))
+                            break
+
+                        except ValueError:
+                            print("Oops!  That was no valid number.  Try again...")
+
+                self.subject_n = n
+
+                # IF FULLSCREEN IS NONE THEN ASKS THE USER IF HE WANTS TO DISPLAY THE EXPERIMENT IN FULLSCREEN:
+                if fullscreen is None:
+                    while True:
+                        fs = str(input('Do you want to run the experiment in fullscreen?\n(y/n): ')).lower()
+                        if fs != 'y' and fs != 'n':
+                            print('The command typed ("{}") is invalid, please type "y" to make the experiment fullscreen\nor "n" to not make the experiment fullscreen'.format(fs))
+                            pass
+                        elif fs == 'y':
+                            self.fullscreen = True
+                            break
+                        else:
+                            self.fullscreen = False
+                            break
+
+                # AFTER ASKS ABOUT THE VOLUNTEER'S NUMVER AND THE FULLSCREEN MODE - BREAK THE WHILE LOOP
+                break
+
+            # IF THE USER DON'T WANTS TO START THE EXPERIMENT THEN BREAK THE WHILE LOOP
+            else:
+                self.startexp = False
+                break
 
 # DEFINE ATTRIBUTES BASED ON CODITIONAL STATEMENTS
         if mask_case == 'upper':
@@ -83,7 +117,6 @@ class Experiment(object):
 
 # DEFINE THE OTHER ATTRIBUTES
         self.conditions = ['congruent', 'incongruent', 'control']
-        self.subject_n = n
         self.pairs_n = pairs_n
         self.language_n = pairs_n * conditions_n
         self.fullcross = fullcross
@@ -120,10 +153,12 @@ class Experiment(object):
 
             return language_order, kb_key_response
 
-        self.language_order, self.kb_key_response = subject_experiment_order() 
+        if self.startexp is True:
 
-        self.firstLang = self.language_order.split('-')[0]
-        self.secondLang = self.language_order.split('-')[1]
+            self.language_order, self.kb_key_response = subject_experiment_order() 
+
+            self.firstLang = self.language_order.split('-')[0]
+            self.secondLang = self.language_order.split('-')[1]
 
 # DETERMINE FRAME DURATION:
         def frame_duration():
@@ -287,41 +322,21 @@ class Experiment(object):
 
                 return prime_target, None
 
-        self.first_sequence, self.second_sequence = words_sequence()
+        if self.startexp is True:
 
-# QUESTION THE USER IF HIS WANT TO START THE EXPERIMENT
-        while True:
-            startexp = str(input('Do you want to begin the expriment?\n(y/n): ')).lower()
-            if startexp != 'y' and startexp != 'n':
-                print('The command typed ("{}") is invalid, please type "y" to begin the experiment\nor "n" to continue without begin the experiment.'.format(startexp))
-            
-            # THE USER WANT TO BEGIN THE EXPERIMENT
-            elif startexp == 'y':
+            self.first_sequence, self.second_sequence = words_sequence()
 
-                # QUESTION THE USER ABOUT HIS FULLSCREEN PREFERENCE
-                if fullscreen is None:
-                    while True:
-                        fs = str(input('Do you want to run the experiment in fullscreen?\n(y/n): ')).lower()
-                        if fs != 'y' and fs != 'n':
-                            print('The command typed ("{}") is invalid, please type "y" to make the experiment fullscreen\nor "n" to not make the experiment fullscreen'.format(fs))
-                            pass
-                        elif fs == 'y':
-                            self.fullscreen = True
-                            break
-                        else:
-                            self.fullscreen = False
-                            break
+# IF STATEMENT ABOUT THE START OF THE EXPERIMENT:
+        # SELF.STARTEXP IS TRUE:
+        if self.startexp is True:
+            self.data_trial_final = self.startExperiment(save=save)
 
-                self.data_trial_final = self.startExperiment(save=save)
-                return
-
-            # THE USER DON'T WANT TO BEGIN THE EXPERIMENT
-            else:
-                try:
-                    self.win.close()
-                    return
-                except AttributeError:
-                    return
+        # SELF.STARTEXP IS FALSE:
+        else:
+            try:
+                self.win.close()
+            except AttributeError:
+                pass
 
 ############# END OF __INIT__() #################
 
@@ -1487,6 +1502,7 @@ Experiment(n=None, fullscreen=True)
 
 class StatisticalAnalysis():
     def __init__(self, n=None, columns=None, save=None, view_data=None):
+    # def __init__(self, n=None, columns=None, save=None, view_data=None):
         # QUESTION TO THE USER WHAT IS THE VOLUNTEER NUMBER
         if n is None:
             while True:
@@ -1827,7 +1843,7 @@ class StatisticalAnalysis():
         data['rescaling_data'] = norm_values
         return data
 
-    def full_preprocess(self, df=None):
+    def full_preprocess(self, df=None, ro=False):
         # IF THERE'S NO DF THAN RETURN NONE
         if df is None:
             data = self.subject_df
@@ -1842,9 +1858,10 @@ class StatisticalAnalysis():
         self.testControlF = testControlF 
 
         # Remove outliers
-        data = self.remove_outliers(df=data, group='incongruent')
-        data = self.remove_outliers(df=data, group='congruent')
-        data = self.remove_outliers(df=data, group='control')
+        if ro is True:
+            data = self.remove_outliers(df=data, group='incongruent')
+            data = self.remove_outliers(df=data, group='congruent')
+            data = self.remove_outliers(df=data, group='control')
 
         # Normalize the data
         data = self.z_score_normalization(df=data)
@@ -1885,47 +1902,74 @@ class StatisticalAnalysis():
     def plotdata(self, first_hue='group', second_hue='l1_l2',  df=None):
         if df is None:
             data = self.full_preprocess()
+            data_ro = self.full_preprocess(ro=True)
+            data_ro_engpor = data_ro[data_ro['l1_l2'] == 'EngPor']
+            data_ro_poreng = data_ro[data_ro['l1_l2'] == 'PorEng']
         else:
             data = df
 
-        sequence = ['incongruent', 'congruent', 'control']
+        sequence = ['congruent', 'incongruent', 'control']
         l1_l2 = ['PorEng', 'EngPor']
 
-        # Print out the test vs control error analysis:
-        print('Test VS Control Error Analysis:', self.testControlF)
+        _EngPorCong = np.mean(data_ro_engpor[data_ro_engpor['group'] == 'congruent']['response_time'])
+        _EngPorIncong = np.mean(data_ro_engpor[data_ro_engpor['group'] == 'incongruent']['response_time'])
+        _EngPorCont = np.mean(data_ro_engpor[data_ro_engpor['group'] == 'control']['response_time'])
 
-        # Create fig and axes objects
-        fig, axes = plt.subplots(2, 2, figsize=(16, 16))
+        _PorEngCong = np.mean(data_ro_poreng[data_ro_poreng['group'] == 'congruent']['response_time'])
+        _PorEngIncong = np.mean(data_ro_poreng[data_ro_poreng['group'] == 'incongruent']['response_time'])
+        _PorEngCont = np.mean(data_ro_poreng[data_ro_poreng['group'] == 'control']['response_time'])
 
-        dataPorEng = data[data['l1_l2'] == l1_l2[0]]
-        sns.catplot(data=dataPorEng, x=first_hue, y='response_time', ax=axes[0, 0], order=sequence, kind='box')
-        axes[0, 0].grid(axis='y', which='major')
+        fig1, axs1 = plt.subplots(1, 2, figsize=(16, 16), sharey=True, subplot_kw={'ylabel' : 'Response Time (ms)'})
 
-        dataEngPor = data[data['l1_l2'] == l1_l2[1]]
-        sns.catplot(data=dataEngPor, x=first_hue, y='response_time', ax=axes[0, 1], order=sequence, kind='box')
-        axes[0, 1].grid(axis='y', which='major')
+        sns.boxplot(data=data[data['l1_l2'] == 'EngPor'], x='group', y='response_time', ax=axs1[0], order=sequence)
+        axs1[0].axhline(_EngPorCong, xmin=.136, xmax=.196, alpha=1, c='r')
+        axs1[0].axhline(_EngPorIncong, xmin=.47, xmax=.53, alpha=1, c='r')
+        axs1[0].axhline(_EngPorCont, xmin=.803, xmax=.863, alpha=1, c='r')
+        axs1[0].set_title('Response Time Box Plot - English-Portuguese')
+        axs1[0].set_ylabel('Response Time (ms)')
 
+        sns.boxplot(data=data[data['l1_l2'] == 'PorEng'], x='group', y='response_time', ax=axs1[1], order=sequence)
+        axs1[1].axhline(_PorEngCong, xmin=.136, xmax=.196, alpha=1, c='r')
+        axs1[1].axhline(_PorEngIncong, xmin=.47, xmax=.53, alpha=1, c='r')
+        axs1[1].axhline(_PorEngCont, xmin=.803, xmax=.863, alpha=1, c='r')
+        axs1[1].set_title('Response Time Box Plot - Portuguese-English')
 
-        sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'control']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='g')
-        sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'incongruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='b')
-        sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'congruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='tab:orange')
-        sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'control']['response_time'], alpha=.8, ax=axes[1, 0], color='g')
-        sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'incongruent']['response_time'], alpha=.8, ax=axes[1, 0], color='b')
-        sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'congruent']['response_time'], alpha=.8, ax=axes[1, 0], color='tab:orange')
-        axes[1, 0].axvline(np.median(dataPorEng[dataPorEng[first_hue] == 'control']['response_time']), alpha=.8, ymax=.5, c='g')
-        axes[1, 0].axvline(np.median(dataPorEng[dataPorEng[first_hue] == 'incongruent']['response_time']), alpha=.8, ymax=.5, c='b')
-        axes[1, 0].axvline(np.median(dataPorEng[dataPorEng[first_hue] == 'congruent']['response_time']), alpha=.8, ymax=.5, c='tab:orange')
-        axes[1, 0].legend(['control', 'incongruent', 'congruent'])
+        fig2, axs = plt.subplots(2, 1, figsize=(16, 16), sharex=True, subplot_kw={'xlabel' : 'Response Time (ms)'})
 
-        sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'control']['response_time'], shade=True, alpha=.2, ax=axes[1, 1], color='g')
-        sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'incongruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 1], color='b')
-        sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'congruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 1], color='tab:orange')
-        sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'control']['response_time'], alpha=.8, ax=axes[1, 1], color='g')
-        sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'incongruent']['response_time'], alpha=.8, ax=axes[1, 1], color='b')
-        sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'congruent']['response_time'], alpha=.8, ax=axes[1, 1], color='tab:orange')
-        axes[1, 1].axvline(np.median(dataEngPor[dataEngPor[first_hue] == 'control']['response_time']), alpha=.8, ymax=.5, c='g')
-        axes[1, 1].axvline(np.median(dataEngPor[dataEngPor[first_hue] == 'incongruent']['response_time']), alpha=.8, ymax=.5, c='b')
-        axes[1, 1].axvline(np.median(dataEngPor[dataEngPor[first_hue] == 'congruent']['response_time']), alpha=.8, ymax=.5, c='tab:orange')
-        axes[1, 1].legend(['control', 'incongruent', 'congruentn'])
+        sns.distplot(data_ro_engpor[data_ro_engpor['group'] == 'control']['response_time'], hist=False, kde=True, kde_kws={'linewidth' : 3, 'shade' : True, 'alpha' : .3}, label='control', ax=axs[0], color='g')
+        sns.distplot(data_ro_engpor[data_ro_engpor['group'] == 'congruent']['response_time'], hist=False, kde=True, kde_kws={'linewidth' : 3, 'shade' : True, 'alpha' : .3}, label='congruent', ax=axs[0], color='b')
+        sns.distplot(data_ro_engpor[data_ro_engpor['group'] == 'incongruent']['response_time'], hist=False, kde=True, kde_kws={'linewidth' : 3, 'shade' : True, 'alpha' : .3}, label='incongruent', ax=axs[0], color='tab:orange')
+
+        axs[0].axvline(_EngPorCont, alpha=.8, ymax=.5, c='g')
+        axs[0].axvline(_EngPorIncong, alpha=.8, ymax=.5, c='tab:orange')
+        axs[0].axvline(_EngPorCong, alpha=.8, ymax=.5, c='b')
+        axs[0].set_title('Response Time Density Distribution - English-Portuguese')
+
+        sns.distplot(data_ro_poreng[data_ro_poreng['group'] == 'control']['response_time'], hist=False, kde=True, kde_kws={'linewidth' : 3, 'shade' : True, 'alpha' : .3}, label='control', ax=axs[1], color='g')
+        sns.distplot(data_ro_poreng[data_ro_poreng['group'] == 'congruent']['response_time'], hist=False, kde=True, kde_kws={'linewidth' : 3, 'shade' : True, 'alpha' : .3}, label='congruent', ax=axs[1], color='b')
+        sns.distplot(data_ro_poreng[data_ro_poreng['group'] == 'incongruent']['response_time'], hist=False, kde=True, kde_kws={'linewidth' : 3, 'shade' : True, 'alpha' : .3}, label='incongruent', ax=axs[1], color='tab:orange')
+
+        axs[1].axvline(_PorEngCont, alpha=.8, ymax=.5, c='g')
+        axs[1].axvline(_PorEngIncong, alpha=.8, ymax=.5, c='tab:orange')
+        axs[1].axvline(_PorEngCong, alpha=.8, ymax=.5, c='b')
+        axs[1].set_title('Response Time Density Distribution - Portuguese-English')
+        axs[1].set_xlabel('Response Time (ms)')
 
         plt.show()
+
+# ASKS THE USER IF HE WANTS TO PERFORM THE STATISTICAL ANALYSIS:
+while True:
+    sa = str(input('Do you want to make a Statistical Analysis?\n (y/n):')) 
+
+    # The input was an invalid command
+    if sa != 'y' and sa != 'n':
+        print("""The command typed "{sa}" is invalid, please type "y" to start a Statistical Analysis\nor type "n" to finish this program.""".format(sa=sa))
+
+    # The user don't want to make an analysis - break the while loop
+    elif sa == 'n':
+        break
+
+    # The user want to make an analysis - create a StatisticalAnalysis object then break the loop
+    else:
+        StatisticalAnalysis()
+        break
