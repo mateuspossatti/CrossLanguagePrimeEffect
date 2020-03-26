@@ -7,3 +7,4 @@ __pycache__/
 support_material/monitor_settings.json
 support_material/apagar.py
 trials_data/
+apagar.py

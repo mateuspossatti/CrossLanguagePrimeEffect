@@ -2,6 +2,7 @@
 
 try:
     from psychopy import visual, core, monitors, event, clock
+    from psychopy.hardware import keyboard
     from matplotlib import pyplot as plt
     from playsound import playsound
     import seaborn as sns
@@ -12,11 +13,9 @@ except ModuleNotFoundError:
     # sb.run('pip3 install -r requirements.txt', shell=True)
     print('Please, install the necessary modules with the command "pip3 install -r requirements.txt" on the command line')
 
-import support_material.keyboard_mod as keyboard
-
 class Experiment(object):
     def __init__(self, n=None, mask_case='upper', pairs_n=50, fullcross=True, conditions_n=3, mask_size=8, onelanguageorder=None,
-    fullscreen=False, timeparadigm=None, kb_keys=None, save=None, practiceLeng=50):
+    fullscreen=False, timeparadigm=None, kb_keys=None, save=None, practiceLeng=50, full_trial=True):
         """:Parameters:
         fullcross: will ditermine if the effect will be studied in the two ways.
         n: the number of the subject, will ditermine the sequence of trial and the language of intructions.
@@ -52,6 +51,7 @@ class Experiment(object):
                     json.dump(self.monDict, monitorSets)
 
 # ASKS THE USER IF HE WANTS TO START THE EXPERIMENT - IF HE WANTS THEN ASKS THE VOLUNTEER'S NUMBER
+        # self.startexp = True
         while True:
             _startexp = str(input('Do you want to begin the expriment?\n(y/n): ')).lower()
             if _startexp != 'y' and _startexp != 'n':
@@ -95,6 +95,8 @@ class Experiment(object):
                 self.startexp = False
                 break
 
+        # self.subject_n = 0
+
 # DEFINE ATTRIBUTES BASED ON CODITIONAL STATEMENTS
         if mask_case == 'upper':
             self.mask_char = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
@@ -114,6 +116,10 @@ class Experiment(object):
             self.kb_keys = ('z', 'm')
         else:
             self.kb_keys = kb_keys
+        if full_trial:
+            self.fullscreen = True
+        else:
+            self.fullscreen = fullscreen
 
 # DEFINE THE OTHER ATTRIBUTES
         self.conditions = ['congruent', 'incongruent', 'control']
@@ -121,7 +127,6 @@ class Experiment(object):
         self.language_n = pairs_n * conditions_n
         self.fullcross = fullcross
         self.mask_size = mask_size
-        self.fullscreen = fullscreen
         self.screen_hz = self.monDict['monitor_frequency']
         self.practiceLeng = practiceLeng
 
@@ -173,10 +178,12 @@ class Experiment(object):
 
 # GENERATE CLOCK, KEYBOARD AND MONITOR
         def clock_generator():
-            monitorclock = clock.Clock()
-            return monitorclock
+            _clock = clock.Clock()
+            return _clock
 
         self.monitorclock = clock_generator()
+
+        self.kbClock = clock_generator()
 
         def hardware_generator():
             kb = keyboard.Keyboard(waitForStart=True)
@@ -329,7 +336,12 @@ class Experiment(object):
 # IF STATEMENT ABOUT THE START OF THE EXPERIMENT:
         # SELF.STARTEXP IS TRUE:
         if self.startexp is True:
-            self.data_trial_final = self.startExperiment(save=save)
+            # IF STATEMENT - FULL TRIAL
+            if full_trial is True:
+                self.data_trial_final = self.startExperiment(save=save, full=True)
+            # NOT FULL TRIAL
+            else:
+                self.data_trial_final = self.startExperiment(save=save, full=False)
 
         # SELF.STARTEXP IS FALSE:
         else:
@@ -339,7 +351,6 @@ class Experiment(object):
                 pass
 
 ############# END OF __INIT__() #################
-
     def define_mon_settings(self):
         print("""Unfortunately, you don't have set your monitor settings yet.\nPlease, answer the next 4 questions to configure your monitor correctly""")
         # Question the name of the monitor
@@ -698,10 +709,8 @@ class Experiment(object):
             _PorTarg = self.second_sequence
             EngTarg = _EngTarg[_EngTarg['class'] == 'control'][:int(trialsN / 2)]
             PorTarg = _PorTarg[_PorTarg['class'] == 'control'][:int(trialsN / 2)]
-            EngTarg.set_index(EngTarg['original_index'], drop=True, inplace=True)
-            PorTarg.set_index(PorTarg['original_index'], drop=True, inplace=True)
-            EngTarg.sort_index(axis=0, ignore_index=True, inplace=True)
-            PorTarg.sort_index(axis=0, ignore_index=True, inplace=True)
+            EngTarg.reset_index(drop=True, inplace=True)
+            PorTarg.reset_index(drop=True, inplace=True)
             firstLang = 'Português'
             secondLang = 'English'
         else:
@@ -709,10 +718,10 @@ class Experiment(object):
             _EngTarg = self.second_sequence
             EngTarg = _EngTarg[_EngTarg['class'] == 'control'][:int(trialsN / 2)]
             PorTarg = _PorTarg[_PorTarg['class'] == 'control'][:int(trialsN / 2)]
-            EngTarg.set_index(EngTarg['original_index'], drop=True, inplace=True)
-            PorTarg.set_index(PorTarg['original_index'], drop=True, inplace=True)
-            EngTarg.sort_index(axis=0, ignore_index=True, inplace=True)
-            PorTarg.sort_index(axis=0, ignore_index=True, inplace=True)
+            EngTarg = _EngTarg[_EngTarg['class'] == 'control'][:int(trialsN / 2)]
+            PorTarg = _PorTarg[_PorTarg['class'] == 'control'][:int(trialsN / 2)]
+            EngTarg.reset_index(drop=True, inplace=True)
+            PorTarg.reset_index(drop=True, inplace=True)
             firstLang = 'English'
             secondLang = 'Português'
 
@@ -779,7 +788,7 @@ class Experiment(object):
             # Display the language of the trail 
             if trialN == 0:
                 showLangTrial(LangTextF)
-            elif trialN == (int(trialsN / 2) - 1):
+            elif trialN == (int(trialsN / 2)):
                 showLangTrial(LangTextS)
 
             # Show fixation cross
@@ -1183,23 +1192,23 @@ class Experiment(object):
                 else:
                     # DRAW TARGET
                     self.target.draw()
+                    self.win.flip()
 
-                    # RESET KB CLOCK AND DEFINE TARGET ONSET
+                    # DEFINE TARGET ONSET AND RESET THE KEYBOARD CLOCK
                     target_onset = self.monitorclock.getTime()
+                    self.kbClock.reset()
 
-                    # RESPONSE EMULATOR
-
-                    # REDRAW TARGET LOOP AND WAIT FOR KEY
-                    key = trial_kb.waitKeys(keyList=('z', 'm'), stimDraw=self.target)
+                    # CALL THE WAITKEYS FUNCTION AND DEFINE THE TARGET TIME END
+                    key = event.waitKeys(keyList=('z', 'm'), timeStamped=self.kbClock)[0]
                     target_time_end = self.monitorclock.getTime()
 
                     # VERIFY THE CONTENT OF KEY
                     if key is None:
                         print("The key variable is equal to None")
-                        key.name, key.rt, key.tDown = (None, None, None)
+                        key = [None, None]
 
                     # Play incorrect sound
-                    if key.name != prime_target_df['correct_response'][trialN]:
+                    if key[0] != prime_target_df['correct_response'][trialN]:
                         playsound(r'.\support_material\incorrect.mp3')
 
                     # COLLECT TRIAL DATA
@@ -1213,7 +1222,6 @@ class Experiment(object):
                         'target_dur' : target_time_end - target_onset
                     }
 
-                    # UPDATE TRIALS DATA FRAME
                     trials_data = trials_data.append({
                         columns_trial[0] : self.prime.text,
                         columns_trial[1] : self.target.text,
@@ -1221,16 +1229,18 @@ class Experiment(object):
                         columns_trial[3] : pair_index,
                         columns_trial[4] : self.back_mask.text,
                         columns_trial[5] : l1_l2,
-                        columns_trial[6] : key.name,
+                        columns_trial[6] : key[0],
                         columns_trial[7] : None,
-                        columns_trial[8] : key.rt,
-                        columns_trial[9] : key.tDown, 
+                        columns_trial[8] : key[1],
+                        columns_trial[9] : None, 
                         columns_trial[10] : time_data['fixation_dur'],
                         columns_trial[11] : time_data['back_mask_dur'],
                         columns_trial[12] : time_data['prime_dur'],
                         columns_trial[13] : time_data['forward_mask_dur'],
                         columns_trial[14] : time_data['target_dur'],
                         }, ignore_index=True)
+
+                    trials_data.to_csv(r'.\trials_data\trials_data_cache\subject-{n}-{order}-{l1_l2}-cache'.format(n=self.subject_n, order=order, l1_l2=l1_l2))
 
                 self.win.flip()
 
@@ -1298,10 +1308,10 @@ class Experiment(object):
         # IF THE EXPERIMENT IS SET TO FULLCROSS THAN
         if self.fullcross:
             # Show instructions
-            _playPractice = self.instructions(full)
+            _displayInstruc = self.instructions(full)
 
             # If play practice is True than play the practice, else: skip the pratice
-            if _playPractice:
+            if _displayInstruc:
                 # Start practice
                 _pracComplete = self.startPractice(full)
 
@@ -1333,15 +1343,15 @@ class Experiment(object):
 
                     # QUESTION ABOUT THE DELETE OF THE OLD FILE AND SAVE THE NEW
                     while True:
-                        save = str(input('(y/n): ')).lower()
+                        conf_save = str(input('(y/n): ')).lower()
 
                         # TYPE COMMAND INVALID
-                        if save != 'y' and save != 'n':
-                            print('Oops!  Your reponse "{}" was not valid. Please type "y" to DELETE the OLD DATA and save the new\nor "n" to continue without save the new data.'.format(save))
+                        if conf_save != 'y' and conf_save != 'n':
+                            print('Oops!  Your reponse "{}" was not valid. Please type "y" to DELETE the OLD DATA and save the new\nor "n" to continue without save the new data.'.format(conf_save))
                             pass
 
                         # DON'T SAVE THE DATA
-                        elif save == 'n':
+                        elif conf_save == 'n':
 
                             # QUESTION THE USER IF HE WANT TO PRINT OUT THE DATA
                             while True:
@@ -1361,15 +1371,13 @@ class Experiment(object):
                                 else:
                                     break
 
-                            # CLOSE WINDOW AND RETURN DATA
-
-                            self.win.close()
+                            # RETURN DATA
 
                             return data_trial_final
-                        
+
                         # IF THE USER WANT TO SAVE ANYWAY THE SAVE PROCEDURE WILL CONCLUDE
                         else:
-                            data.to_csv(r'.\trials_data\subject-{}-norm.csv'.format(self.subject_n))
+                            data_trial_final.to_csv(r'.\trials_data\subject-{}-norm.csv'.format(self.subject_n))
                             print('The data was saved successfully on the file named "subject-{}-norm.csv" in the "trials_data" directory.'.format(self.subject_n))
 
                             # QUESTION THE USER IF HE WANT TO PRINT OUT THE DATA
@@ -1390,8 +1398,6 @@ class Experiment(object):
                                 else:
                                     break
 
-                            self.win.close()
-
                             return data_trial_final
 
                 # THERE'S NO FILE WITH THE SAME NAME. THE SAVE PROCEDURE WILL BE EXECUTED
@@ -1405,8 +1411,7 @@ class Experiment(object):
 
                         # INVALID COMMAND
                         if printdata != 'y' and printdata != 'n':
-                            print('Oops!  Your reponse "{}" was not valid. Please type "y" to DELETE the OLD DATA and save the new\nor "n" to continue without save the new data.'.format(printdata))
-                            pass
+                            print('Oops!  Your reponse "{}" was not valid. Please type "y" to PRINT OUT THE DATA\nor "n" to continue without printing the collected data.'.format(printdata))
 
                         # PRINT OUT THE DATA
                         elif printdata == 'y':
@@ -1417,9 +1422,7 @@ class Experiment(object):
                         else:
                             break
 
-                    # CLOSE THE WINDOW AND RETURN THE DATA
-
-                    self.win.close()
+                    # RETURN THE DATA
 
                     return data_trial_final
 
@@ -1431,8 +1434,7 @@ class Experiment(object):
 
                     # INVALID COMMAND
                     if printdata != 'y' and printdata != 'n':
-                        print('Oops!  Your reponse "{}" was not valid. Please type "y" to DELETE the OLD DATA and save the new\nor "n" to continue without save the new data.'.format(printdata))
-                        pass
+                        print('Oops!  Your reponse "{}" was not valid.  Please type "y" to PRINT OUT THE DATA\nor "n" to continue without printing the collected data.'.format(printdata))
 
                     # PRINT OUT THE DATA
                     elif printdata == 'y':
@@ -1444,13 +1446,11 @@ class Experiment(object):
                         break
                 # CLOSE THE WINDOW AND RETURN THE DATA
 
-                self.win.close()
-
                 return data_trial_final
 
         # NOT FULLCROSS
         else:
-            # data_trial_final = self.startTrial('first', full)
+            data_trial_final = self.startTrial('first', full)
 
             # IF SAVE IS TRUE THAN BEGIN THE SAVE PROCEDURE
             if save:
@@ -1478,7 +1478,7 @@ class Experiment(object):
 
                         # SAVE THE DATA
                         else:
-                            data.to_csv(r'.\trials_data\subject-{}-norm.csv'.format(self.subject_n))
+                            data_trial_final.to_csv(r'.\trials_data\subject-{}-norm.csv'.format(self.subject_n))
                             print('The data was saved successfully on the file named "subject-{}-norm.csv" in the "trials_data" directory.'.format(self.subject_n))
 
                 # THERE'S NO FILE WITH THE SAME NAME. SAVE THE DATA, RETURN DATA AND CLOSE WINDOW.
@@ -1496,13 +1496,12 @@ class Experiment(object):
 
                 return data_trial_final
 
-Experiment(n=None, fullscreen=True)
+Experiment(n=0, full_trial=False)
 
 ##############################################################################################################################################################################
 
 class StatisticalAnalysis():
     def __init__(self, n=None, columns=None, save=None, view_data=None):
-    # def __init__(self, n=None, columns=None, save=None, view_data=None):
         # QUESTION TO THE USER WHAT IS THE VOLUNTEER NUMBER
         if n is None:
             while True:
@@ -1880,7 +1879,7 @@ class StatisticalAnalysis():
             data = df
 
         try: 
-            test = pd.read_csv(r'.\trials_data\subject-{}-norm.csv'.format(self.subject_n))
+            test = pd.read_csv(r'.\trials_data\subject-{}-processed.csv'.format(self.subject_n))
             print('The data for the "subject {}" already exist,\ndo you have certainty that you want to DELETE the OLD DATA and save the new data in the place?'.format(self.subject_n))
             while True:
                 save = str(input('(y/n): ')).lower()
