@@ -1240,7 +1240,7 @@ class Experiment(object):
                         columns_trial[14] : time_data['target_dur'],
                         }, ignore_index=True)
 
-                    trials_data.to_csv(r'.\trials_data\trials_data_cache\subject-{n}-{order}-{l1_l2}-cache'.format(n=self.subject_n, order=order, l1_l2=l1_l2))
+                    trials_data.to_csv(r'.\trials_data\trials_data_cache\subject-{n}-{order}-{l1_l2}-cache.csv'.format(n=self.subject_n, order=order, l1_l2=l1_l2))
 
                 self.win.flip()
 
@@ -1918,7 +1918,7 @@ class StatisticalAnalysis():
         _PorEngIncong = np.mean(data_ro_poreng[data_ro_poreng['group'] == 'incongruent']['response_time'])
         _PorEngCont = np.mean(data_ro_poreng[data_ro_poreng['group'] == 'control']['response_time'])
 
-        fig1, axs1 = plt.subplots(1, 2, figsize=(16, 16), sharey=True, subplot_kw={'ylabel' : 'Response Time (ms)'})
+        fig1, axs1 = plt.subplots(1, 2, figsize=(16, 16), sharey=True)
 
         sns.boxplot(data=data[data['l1_l2'] == 'EngPor'], x='group', y='response_time', ax=axs1[0], order=sequence)
         axs1[0].axhline(_EngPorCong, xmin=.136, xmax=.196, alpha=1, c='r')
@@ -1933,26 +1933,26 @@ class StatisticalAnalysis():
         axs1[1].axhline(_PorEngCont, xmin=.803, xmax=.863, alpha=1, c='r')
         axs1[1].set_title('Response Time Box Plot - Portuguese-English')
 
-        fig2, axs = plt.subplots(2, 1, figsize=(16, 16), sharex=True, subplot_kw={'xlabel' : 'Response Time (ms)'})
+        fig2, axs2 = plt.subplots(2, 1, figsize=(16, 16), sharex=True)
 
-        sns.distplot(data_ro_engpor[data_ro_engpor['group'] == 'control']['response_time'], hist=False, kde=True, kde_kws={'linewidth' : 3, 'shade' : True, 'alpha' : .3}, label='control', ax=axs[0], color='g')
-        sns.distplot(data_ro_engpor[data_ro_engpor['group'] == 'congruent']['response_time'], hist=False, kde=True, kde_kws={'linewidth' : 3, 'shade' : True, 'alpha' : .3}, label='congruent', ax=axs[0], color='b')
-        sns.distplot(data_ro_engpor[data_ro_engpor['group'] == 'incongruent']['response_time'], hist=False, kde=True, kde_kws={'linewidth' : 3, 'shade' : True, 'alpha' : .3}, label='incongruent', ax=axs[0], color='tab:orange')
+        sns.distplot(data_ro_engpor[data_ro_engpor['group'] == 'control']['response_time'], hist=False, kde=True, kde_kws={'linewidth' : 3, 'shade' : True, 'alpha' : .3}, label='control', ax=axs2[0], color='g')
+        sns.distplot(data_ro_engpor[data_ro_engpor['group'] == 'congruent']['response_time'], hist=False, kde=True, kde_kws={'linewidth' : 3, 'shade' : True, 'alpha' : .3}, label='congruent', ax=axs2[0], color='b')
+        sns.distplot(data_ro_engpor[data_ro_engpor['group'] == 'incongruent']['response_time'], hist=False, kde=True, kde_kws={'linewidth' : 3, 'shade' : True, 'alpha' : .3}, label='incongruent', ax=axs2[0], color='tab:orange')
 
-        axs[0].axvline(_EngPorCont, alpha=.8, ymax=.5, c='g')
-        axs[0].axvline(_EngPorIncong, alpha=.8, ymax=.5, c='tab:orange')
-        axs[0].axvline(_EngPorCong, alpha=.8, ymax=.5, c='b')
-        axs[0].set_title('Response Time Density Distribution - English-Portuguese')
+        axs2[0].axvline(_EngPorCont, alpha=.8, ymax=.5, c='g')
+        axs2[0].axvline(_EngPorIncong, alpha=.8, ymax=.5, c='tab:orange')
+        axs2[0].axvline(_EngPorCong, alpha=.8, ymax=.5, c='b')
+        axs2[0].set_title('Response Time Density Distribution - English-Portuguese')
 
-        sns.distplot(data_ro_poreng[data_ro_poreng['group'] == 'control']['response_time'], hist=False, kde=True, kde_kws={'linewidth' : 3, 'shade' : True, 'alpha' : .3}, label='control', ax=axs[1], color='g')
-        sns.distplot(data_ro_poreng[data_ro_poreng['group'] == 'congruent']['response_time'], hist=False, kde=True, kde_kws={'linewidth' : 3, 'shade' : True, 'alpha' : .3}, label='congruent', ax=axs[1], color='b')
-        sns.distplot(data_ro_poreng[data_ro_poreng['group'] == 'incongruent']['response_time'], hist=False, kde=True, kde_kws={'linewidth' : 3, 'shade' : True, 'alpha' : .3}, label='incongruent', ax=axs[1], color='tab:orange')
+        sns.distplot(data_ro_poreng[data_ro_poreng['group'] == 'control']['response_time'], hist=False, kde=True, kde_kws={'linewidth' : 3, 'shade' : True, 'alpha' : .3}, label='control', ax=axs2[1], color='g')
+        sns.distplot(data_ro_poreng[data_ro_poreng['group'] == 'congruent']['response_time'], hist=False, kde=True, kde_kws={'linewidth' : 3, 'shade' : True, 'alpha' : .3}, label='congruent', ax=axs2[1], color='b')
+        sns.distplot(data_ro_poreng[data_ro_poreng['group'] == 'incongruent']['response_time'], hist=False, kde=True, kde_kws={'linewidth' : 3, 'shade' : True, 'alpha' : .3}, label='incongruent', ax=axs2[1], color='tab:orange')
 
-        axs[1].axvline(_PorEngCont, alpha=.8, ymax=.5, c='g')
-        axs[1].axvline(_PorEngIncong, alpha=.8, ymax=.5, c='tab:orange')
-        axs[1].axvline(_PorEngCong, alpha=.8, ymax=.5, c='b')
-        axs[1].set_title('Response Time Density Distribution - Portuguese-English')
-        axs[1].set_xlabel('Response Time (ms)')
+        axs2[1].axvline(_PorEngCont, alpha=.8, ymax=.5, c='g')
+        axs2[1].axvline(_PorEngIncong, alpha=.8, ymax=.5, c='tab:orange')
+        axs2[1].axvline(_PorEngCong, alpha=.8, ymax=.5, c='b')
+        axs2[1].set_title('Response Time Density Distribution - Portuguese-English')
+        axs2[1].set_xlabel('Response Time (ms)')
 
         plt.show()
 
