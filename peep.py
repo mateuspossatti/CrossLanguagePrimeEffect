@@ -12,7 +12,7 @@ except ModuleNotFoundError:
 
 class Experiment(object):
     def __init__(self, n=None, mask_case='upper', pairs_n=50, fullcross=True, conditions_n=3, mask_size=8, onelanguageorder=None,
-    fullscreen=False, timeparadigm=None, kb_keys=None, save=None, practiceLeng=50, full_trial=True):
+    fullscreen=True, timeparadigm=None, kb_keys=None, save=None, practiceLeng=50, full_trial=True):
         """:Parameters:
         fullcross: will ditermine if the effect will be studied in the two ways.
         n: the number of the subject, will ditermine the sequence of trial and the language of intructions.
@@ -48,7 +48,6 @@ class Experiment(object):
                     json.dump(self.monDict, monitorSets)
 
 # ASKS THE USER IF HE WANTS TO START THE EXPERIMENT - IF HE WANTS THEN ASKS THE VOLUNTEER'S NUMBER
-        # self.startexp = True
         while True:
             _startexp = str(input('Do you want to begin the expriment?\n(y/n): ')).lower()
             if _startexp != 'y' and _startexp != 'n':
@@ -91,8 +90,6 @@ class Experiment(object):
             else:
                 self.startexp = False
                 break
-
-        # self.subject_n = 0
 
 # DEFINE ATTRIBUTES BASED ON CODITIONAL STATEMENTS
         if mask_case == 'upper':
@@ -883,24 +880,25 @@ class Experiment(object):
                         countdownText.draw()
                         self.win.flip()
 
-                        key = event.getKeys(keyList=('return'))[0]
+                        key = event.getKeys(keyList=('return'))
 
-                        if key:
-                            if key == 'return':
-                                stop = True
-                                break
+                        if key == ['return']:
+                            stop = True
+                            break
 
                 else:
                     titleText.autoDraw = False
                     endPracText.autoDraw = False
-                    pass
 
             if not stop:
-                endText = visual.TextStim(self.win, text=_endText, color=(-1, -1, -1), units='norm', wrapWidth=1.8, alignText='center', height=0.1)
+                titleText.autoDraw = False
+                endPracText.autoDraw = False
+
+                endText = visual.TextStim(self.win, text=_endText, color=(-1, -1, -1), units='norm', wrapWidth=1.8, alignText='center', height=0.1, pos=(0, 0))
 
                 endText.draw()
                 self.win.flip()
-                key = event.waitKeys(keyList=('return'), timeStamped=False)[0]
+                event.waitKeys(keyList=('return'), timeStamped=False)
 
         display_countdown()
 
@@ -959,20 +957,21 @@ class Experiment(object):
                         countdownText.draw()
                         self.win.flip()
 
-                        key = event.getKeys(keyList=('return'))[0]
+                        key = event.getKeys(keyList=('return'))
 
-                        if key:
-                            if key == 'return':
-                                stop = True
-                                break
+                        if key == ['return']:
+                            stop = True
+                            break
 
                 else:
                     titleText.autoDraw = False
                     endPracText.autoDraw = False
-                    pass
 
             if not stop:
-                endText = visual.TextStim(self.win, text=_endText, color=(-1, -1, -1), units='norm', wrapWidth=1.8, alignText='center', height=0.1)
+                titleText.autoDraw = False
+                endPracText.autoDraw = False
+
+                endText = visual.TextStim(self.win, text=_endText, color=(-1, -1, -1), units='norm', wrapWidth=1.8, alignText='center', height=0.1, pos=(0, 0))
 
                 endText.draw()
                 self.win.flip()
@@ -1007,14 +1006,11 @@ class Experiment(object):
         title = visual.TextStim(self.win, text=_titleText, units='norm', pos=(0, 0.8), color=(-1, -1, -1), wrapWidth=1.75, height=0.15)
         endText = visual.TextStim(self.win, text=_endText, units='norm', alignText='left', height=0.1, pos=(0.0, 0), wrapWidth=1.75, color=(-1, -1, -1))
 
-        title.autoDraw = True
-        endText.autoDraw = True
-
         title.draw()
         endText.draw()
         self.win.flip()
 
-        event.getKeys(keyList=('return'))
+        event.waitKeys(keyList=('return'))
 
         self.win.close()
 
@@ -1269,19 +1265,6 @@ class Experiment(object):
                 else:
                     print('The command typed is not valid, please answer with "y" to save or "n" to not save.\nYour answer was: "{}"'.format(save))
 
-        # QUESTION THE USER IF HE WANT TO EXECUTE THE FULL EXPERIMENT
-        if full is None:
-            while True:
-                full = str(input('Do you want to do the full experiment? (y/n)\n')).lower()
-                if full == 'y':
-                    full = True
-                    break
-                elif full == 'n':
-                    full = False
-                    break
-                else:
-                    print('The command typed is not valid, please answer with "y" to do the full expriment\nor "n" to do a partial experiment.\nYour answer was: "{}"'.format(save))
-
         # IF THE EXPERIMENT IS SET TO FULLCROSS THAN
         if self.fullcross:
             # Show instructions
@@ -1473,7 +1456,7 @@ class Experiment(object):
 
                 return data_trial_final
 
-Experiment(fullscreen=False, full_trial=True)
+Experiment()
 
 ##############################################################################################################################################################################
 
@@ -1935,7 +1918,7 @@ class StatisticalAnalysis():
 
 # ASKS THE USER IF HE WANTS TO PERFORM THE STATISTICAL ANALYSIS:
 while True:
-    sa = str(input('Do you want to make a Statistical Analysis?\n (y/n):')) 
+    sa = str(input('Do you want to make a Statistical Analysis?\n (y/n):')).lower()
 
     # The input was an invalid command
     if sa != 'y' and sa != 'n':
