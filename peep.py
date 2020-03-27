@@ -116,10 +116,6 @@ class Experiment(object):
             self.kb_keys = ('z', 'm')
         else:
             self.kb_keys = kb_keys
-        if full_trial:
-            self.fullscreen = True
-        else:
-            self.fullscreen = fullscreen
 
 # DEFINE THE OTHER ATTRIBUTES
         self.conditions = ['congruent', 'incongruent', 'control']
@@ -129,6 +125,7 @@ class Experiment(object):
         self.mask_size = mask_size
         self.screen_hz = self.monDict['monitor_frequency']
         self.practiceLeng = practiceLeng
+        self.fullscreen = fullscreen
 
 # CREATE A GLOBAL KEY EVENT TO QUIT THE PROGRAM
         # Determine key and modifires
@@ -829,12 +826,13 @@ class Experiment(object):
                 else:
                     # DRAW TARGET
                     self.target.draw()
+                    self.win.flip()
 
                     # REDRAW TARGET LOOP AND WAIT FOR KEY
-                    key = practiceKb.waitKeys(keyList=('z', 'm'), stimDraw=self.target)
+                    key = event.waitKeys(keyList=('z', 'm'), timeStamped=False)[0]
 
                     # If the response was incorrect play error sound
-                    if key.name != target_df['correct_response'][trialN]:
+                    if key != target_df['correct_response'][trialN]:
                         playsound(r'.\support_material\incorrect.mp3')
 
                 self.win.flip()
@@ -1496,7 +1494,7 @@ class Experiment(object):
 
                 return data_trial_final
 
-Experiment()
+Experiment(fullscreen=False, full_trial=True)
 
 ##############################################################################################################################################################################
 
