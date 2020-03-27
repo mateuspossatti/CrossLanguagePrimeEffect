@@ -911,7 +911,7 @@ class Experiment(object):
 
                 endText.draw()
                 self.win.flip()
-                self.kb.waitKeys(stimDraw=endText, keyList=('return'))
+                key = event.waitKeys(keyList=('return'), timeStamped=False)[0]
                 self.kb.stop()
 
         display_countdown()
