@@ -1,5 +1,3 @@
-# import subprocess as sb
-
 try:
     from psychopy import visual, core, monitors, event, clock
     from psychopy.hardware import keyboard
@@ -10,7 +8,6 @@ try:
     import numpy as np
     import json
 except ModuleNotFoundError:
-    # sb.run('pip3 install -r requirements.txt', shell=True)
     print('Please, install the necessary modules with the command "pip3 install -r requirements.txt" on the command line')
 
 class Experiment(object):
@@ -181,13 +178,6 @@ class Experiment(object):
         self.monitorclock = clock_generator()
 
         self.kbClock = clock_generator()
-
-        def hardware_generator():
-            kb = keyboard.Keyboard(waitForStart=True)
-
-            return kb
-
-        self.kb = hardware_generator()
 
         self.mon = self.set_monitor()
 
@@ -874,7 +864,6 @@ class Experiment(object):
 
         def display_countdown():
             countdown.reset()
-            self.kb.start()
             titleText.autoDraw = True
             endPracText.autoDraw = True
             stop = False
@@ -894,10 +883,10 @@ class Experiment(object):
                         countdownText.draw()
                         self.win.flip()
 
-                        key = self.kb.getKeys(keyList=('return'))
+                        key = event.getKeys(keyList=('return'))[0]
 
                         if key:
-                            if key[0].name == 'return':
+                            if key == 'return':
                                 stop = True
                                 break
 
@@ -912,7 +901,6 @@ class Experiment(object):
                 endText.draw()
                 self.win.flip()
                 key = event.waitKeys(keyList=('return'), timeStamped=False)[0]
-                self.kb.stop()
 
         display_countdown()
 
@@ -952,7 +940,6 @@ class Experiment(object):
 
         def display_countdown():
             countdown.reset()
-            self.kb.start()
             titleText.autoDraw = True
             endPracText.autoDraw = True
             stop = False
@@ -972,10 +959,10 @@ class Experiment(object):
                         countdownText.draw()
                         self.win.flip()
 
-                        key = self.kb.getKeys(keyList=('return'))
+                        key = event.getKeys(keyList=('return'))[0]
 
                         if key:
-                            if key[0].name == 'return':
+                            if key == 'return':
                                 stop = True
                                 break
 
@@ -989,8 +976,7 @@ class Experiment(object):
 
                 endText.draw()
                 self.win.flip()
-                self.kb.waitKeys(stimDraw=endText, keyList=('return'))
-                self.kb.stop()
+                event.waitKeys(keyList=('return'))
 
         display_countdown()
 
@@ -1028,14 +1014,7 @@ class Experiment(object):
         endText.draw()
         self.win.flip()
 
-        while True:
-            self.kb.start()
-            
-            key = self.kb.getKeys(keyList=('return'))
-
-            if key:
-                if key[0].name == 'return':
-                    break
+        event.getKeys(keyList=('return'))
 
         self.win.close()
 
