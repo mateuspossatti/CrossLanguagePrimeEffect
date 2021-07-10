@@ -1,20 +1,19 @@
-import subprocess as sb
 
-try:
-    from psychopy import visual, core, monitors, event, clock
-    from matplotlib import pyplot as plt
-    from playsound import playsound
-    import seaborn as sns
-    import pandas as pd
-    import numpy as np
-    import json
-except ModuleNotFoundError:
-    sb.run('pip3 install -r requirements.txt', shell=True)
-
-import keyboard_mod as keyboard
+from psychopy import prefs
+prefs.hardware['audioLib'] = ['pyo']
+import psychtoolbox as ptb
+from psychopy.sound.backend_pyo import SoundPyo
+from psychopy import visual, core, monitors, event, clock
+from psychopy.hardware import keyboard
+from matplotlib import pyplot as plt
+from playsound import playsound
+import seaborn as sns
+import pandas as pd
+import numpy as np
+import json
 
 class Experiment(object):
-    def __init__(self, n=None, mask_case='upper', pairs_n=50, fullcross=True, conditions_n=3, mask_size=8, onelanguageorder=None,
+    def __init__(self, n=3, mask_case='upper', pairs_n=50, fullcross=True, conditions_n=3, mask_size=8, onelanguageorder=None,
     fullscreen=False, timeparadigm=None, kb_keys=None, save=None, practiceLeng=50):
         """:Parameters:
         fullcross: will ditermine if the effect will be studied in the two ways.
@@ -85,6 +84,9 @@ class Experiment(object):
         self.screen_hz = self.monDict['monitor_frequency']
         self.practiceLeng = practiceLeng
 
+        # CREATE A SOUND OBJECT FOR ERROR FEEDBACK
+        self.error_sound = SoundPyo(r'.\support_material\incorrect.ogg')
+
 # CREATE A GLOBAL KEY EVENT TO QUIT THE PROGRAM
         # Determine key and modifires
         key = 'q'
@@ -137,7 +139,7 @@ class Experiment(object):
         self.monitorclock = clock_generator()
 
         def hardware_generator():
-            kb = keyboard.Keyboard(waitForStart=True)
+            kb = keyboard.Keyboard()
 
             return kb
 
@@ -489,9 +491,9 @@ class Experiment(object):
         freq = self.monDict['monitor_frequency']
 
         if self.fullscreen:
-            win = visual.Window(monitorFramePeriod=freq, monitor=self.mon, fullscr=True, units=['cm', 'norm'], color=(1, 1, 1))
+            win = visual.Window(monitor=self.mon, fullscr=True, units=['cm', 'norm'], color=(1, 1, 1))
         else:
-            win = visual.Window(size=[1200, 800], monitorFramePeriod=freq, monitor=self.mon, units=['cm', 'norm'], color=(1, 1, 1))
+            win = visual.Window(size=[1920, 1080], monitor=self.mon, units=['cm', 'norm'], color=(1, 1, 1))
         return win
 
     def set_monitor(self):
@@ -744,8 +746,8 @@ class Experiment(object):
 
         end_frames, total_f = self.endFrames()
 
-        # Create practice KB
-        practiceKb = keyboard.Keyboard()
+        # # Create practice KB
+        # practiceKb = keyboard.Keyboard()
 
         # Create show language TextStim
         LangTextF = visual.TextStim(self.win, text=firstLang, units='norm', height=.2, color=(-1, -1, -1))
@@ -801,15 +803,22 @@ class Experiment(object):
                     self.forward_mask.draw()
 
                 else:
-                    # DRAW TARGET
+                    # RESET MONITORCLOCK
+                    self.monitorclock.reset()
+                    # DRAW TARGET AND FLIP WINDOW
                     self.target.draw()
 
-                    # REDRAW TARGET LOOP AND WAIT FOR KEY
-                    key = practiceKb.waitKeys(keyList=('z', 'm'), stimDraw=self.target)
+                    self.win.flip()
 
-                    # If the response was incorrect play error sound
-                    if key.name != target_df['correct_response'][trialN]:
-                        playsound(r'.\support_material\incorrect.mp3')
+                    key = event.waitKeys(keyList=('z', 'm'), timeStamped=self.monitorclock)
+                    keyname, time = key[0]
+
+                    print(keyname, time)
+
+                    # # If the response was incorrect play error sound
+                    # if keyname != target_df['correct_response'][trialN]:
+                    #     self.error_sound.play()
+                    #     # playsound(r'.\support_material\incorrect.mp3')
 
                 self.win.flip()
 
@@ -1472,7 +1481,7 @@ class Experiment(object):
 
                 return data_trial_final
 
-Experiment(n=None, fullscreen=True)
+Experiment(n=3, fullscreen=False, save=True)
 
 ##############################################################################################################################################################################
 
