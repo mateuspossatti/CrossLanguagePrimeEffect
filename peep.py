@@ -1,19 +1,16 @@
-
-from psychopy import prefs
-prefs.hardware['audioLib'] = ['pyo']
-import psychtoolbox as ptb
-from psychopy.sound.backend_pyo import SoundPyo
 from psychopy import visual, core, monitors, event, clock
 from psychopy.hardware import keyboard
 from matplotlib import pyplot as plt
 from playsound import playsound
+from pyglet.window.key import A
 import seaborn as sns
 import pandas as pd
 import numpy as np
 import json
+import os
 
-class Experiment(object):
-    def __init__(self, n=3, mask_case='upper', pairs_n=50, fullcross=True, conditions_n=3, mask_size=8, onelanguageorder=None,
+class Experiment:
+    def __init__(self, n=None, mask_case='upper', pairs_n=50, fullcross=True, conditions_n=3, mask_size=8, onelanguageorder=None,
     fullscreen=False, timeparadigm=None, kb_keys=None, save=None, practiceLeng=50):
         """:Parameters:
         fullcross: will ditermine if the effect will be studied in the two ways.
@@ -84,8 +81,8 @@ class Experiment(object):
         self.screen_hz = self.monDict['monitor_frequency']
         self.practiceLeng = practiceLeng
 
-        # CREATE A SOUND OBJECT FOR ERROR FEEDBACK
-        self.error_sound = SoundPyo(r'.\support_material\incorrect.ogg')
+# PRINT FULL DATAFRAME
+        pd.set_option("display.max_rows", None, "display.max_columns", None)
 
 # CREATE A GLOBAL KEY EVENT TO QUIT THE PROGRAM
         # Determine key and modifires
@@ -131,19 +128,10 @@ class Experiment(object):
 
         self.frame_paradigm = frame_duration()
 
-# GENERATE CLOCK, KEYBOARD AND MONITOR
-        def clock_generator():
-            monitorclock = clock.Clock()
-            return monitorclock
+# CREATE CLOCK, KEYBOARD AND MONITOR
+        self.kbclock = clock.Clock()
 
-        self.monitorclock = clock_generator()
-
-        def hardware_generator():
-            kb = keyboard.Keyboard()
-
-            return kb
-
-        self.kb = hardware_generator()
+        self.monitorclock = clock.Clock()
 
         self.mon = self.set_monitor()
 
@@ -746,9 +734,6 @@ class Experiment(object):
 
         end_frames, total_f = self.endFrames()
 
-        # # Create practice KB
-        # practiceKb = keyboard.Keyboard()
-
         # Create show language TextStim
         LangTextF = visual.TextStim(self.win, text=firstLang, units='norm', height=.2, color=(-1, -1, -1))
         LangTextS = visual.TextStim(self.win, text=secondLang, units='norm', height=.2, color=(-1, -1, -1))
@@ -804,21 +789,18 @@ class Experiment(object):
 
                 else:
                     # RESET MONITORCLOCK
-                    self.monitorclock.reset()
+                    self.kbclock.reset()
                     # DRAW TARGET AND FLIP WINDOW
                     self.target.draw()
 
                     self.win.flip()
 
-                    key = event.waitKeys(keyList=('z', 'm'), timeStamped=self.monitorclock)
+                    key = event.waitKeys(keyList=('z', 'm'), timeStamped=self.kbclock)
                     keyname, time = key[0]
 
-                    print(keyname, time)
-
-                    # # If the response was incorrect play error sound
-                    # if keyname != target_df['correct_response'][trialN]:
-                    #     self.error_sound.play()
-                    #     # playsound(r'.\support_material\incorrect.mp3')
+                    # If the response was incorrect play error sound
+                    if keyname != target_df['correct_response'][trialN]:
+                        playsound(r'.\support_material\incorrect.mp3')
 
                 self.win.flip()
 
@@ -856,7 +838,6 @@ class Experiment(object):
 
         def display_countdown():
             countdown.reset()
-            self.kb.start()
             titleText.autoDraw = True
             endPracText.autoDraw = True
             stop = False
@@ -876,10 +857,10 @@ class Experiment(object):
                         countdownText.draw()
                         self.win.flip()
 
-                        key = self.kb.getKeys(keyList=('return'))
+                        key = event.getKeys(keyList=('return'))
 
                         if key:
-                            if key[0].name == 'return':
+                            if key[0] == 'return':
                                 stop = True
                                 break
 
@@ -893,8 +874,7 @@ class Experiment(object):
 
                 endText.draw()
                 self.win.flip()
-                self.kb.waitKeys(stimDraw=endText, keyList=('return'))
-                self.kb.stop()
+                event.waitKeys(keyList=('return'))
 
         display_countdown()
 
@@ -932,7 +912,6 @@ class Experiment(object):
 
         def display_countdown():
             countdown.reset()
-            self.kb.start()
             titleText.autoDraw = True
             endPracText.autoDraw = True
             stop = False
@@ -952,10 +931,10 @@ class Experiment(object):
                         countdownText.draw()
                         self.win.flip()
 
-                        key = self.kb.getKeys(keyList=('return'))
+                        key = event.getKeys(keyList=('return'))
 
                         if key:
-                            if key[0].name == 'return':
+                            if key[0] == 'return':
                                 stop = True
                                 break
 
@@ -970,7 +949,7 @@ class Experiment(object):
                 endText.draw()
                 self.win.flip()
                 self.kb.waitKeys(stimDraw=endText, keyList=('return'))
-                self.kb.stop()
+
 
         display_countdown()
 
@@ -1009,12 +988,11 @@ class Experiment(object):
         self.win.flip()
 
         while True:
-            self.kb.start()
             
-            key = self.kb.getKeys(keyList=('return'))
+            key = event.getKeys(keyList=('return'))
 
             if key:
-                if key[0].name == 'return':
+                if key[0] == 'return':
                     break
 
         self.win.close()
@@ -1052,9 +1030,6 @@ class Experiment(object):
 
         except AttributeError:
             self.fixation, self.back_mask, self.prime, self.forward_mask, self.target = self.stimulus_generator()
-
-        # CREATE TRIAL KEYBOARD:
-        trial_kb = keyboard.Keyboard(waitForStart=True)
 
         # CREATE L1_L2 VARIABLE AND LOAD PRIME-TARGET SEQUENCE
         language_order = self.language_order.split('-')
@@ -1171,21 +1146,26 @@ class Experiment(object):
                     # DRAW TARGET
                     self.target.draw()
 
-                    # RESET KB CLOCK AND DEFINE TARGET ONSET
+                    # RESET KB CLOCK, FLIP WINDOW AND DEFINE TARGET ONSET
+                    self.win.flip()
+
+                    self.kbclock.reset()
+
                     target_onset = self.monitorclock.getTime()
 
-                    # REDRAW TARGET LOOP AND WAIT FOR KEY
-                    key = trial_kb.waitKeys(keyList=('z', 'm'), stimDraw=self.target)
+                    # WAIT FOR KEY
+                    key = event.waitKeys(keyList=('z', 'm'), timeStamped=self.kbclock)
+                    keyname, keytime = key[0]
+                
                     target_time_end = self.monitorclock.getTime()
 
-                    # VERIFY THE CONTENT OF KEY
-                    if key is None:
-                        print("The key variable is equal to None")
-                        key.name, key.rt, key.tDown = (None, None, None)
-
                     # Play incorrect sound
-                    if key.name != prime_target_df['correct_response'][trialN]:
+                    if keyname != prime_target_df['correct_response'][trialN]:
                         playsound(r'.\support_material\incorrect.mp3')
+                        correct_key = False
+                    
+                    else:
+                        correct_key = True
 
                     # COLLECT TRIAL DATA
                     time_data = {
@@ -1206,10 +1186,10 @@ class Experiment(object):
                         columns_trial[3] : pair_index,
                         columns_trial[4] : self.back_mask.text,
                         columns_trial[5] : l1_l2,
-                        columns_trial[6] : key.name,
-                        columns_trial[7] : None,
-                        columns_trial[8] : key.rt,
-                        columns_trial[9] : key.tDown, 
+                        columns_trial[6] : keyname,
+                        columns_trial[7] : correct_key,
+                        columns_trial[8] : keytime,
+                        columns_trial[9] : None, 
                         columns_trial[10] : time_data['fixation_dur'],
                         columns_trial[11] : time_data['back_mask_dur'],
                         columns_trial[12] : time_data['prime_dur'],
@@ -1481,11 +1461,7 @@ class Experiment(object):
 
                 return data_trial_final
 
-Experiment(n=3, fullscreen=False, save=True)
-
-##############################################################################################################################################################################
-
-class StatisticalAnalysis():
+class StatisticalAnalysis:
     def __init__(self, n=None, columns=None, save=None, view_data=None):
         # QUESTION TO THE USER WHAT IS THE VOLUNTEER NUMBER
         if n is None:
@@ -1929,3 +1905,9 @@ class StatisticalAnalysis():
         axes[1, 1].legend(['control', 'incongruent', 'congruentn'])
 
         plt.show()
+
+if __name__ == '__main__':
+    root_dir = os.path.dirname(__file__)
+    os.makedirs(os.path.join(root_dir, 'trials_data'), exist_ok=True)
+
+    # Experiment(fullscreen=True)
