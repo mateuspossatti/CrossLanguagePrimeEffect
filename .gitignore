@@ -1,6 +1,5 @@
 __pycache__/
 .vscode/
 .tmp.drivedownload/
-env/
-peep_venv/
 support_material/monitor_settings.json
+trials_data/*

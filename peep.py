@@ -1910,4 +1910,6 @@ if __name__ == '__main__':
     root_dir = os.path.dirname(__file__)
     os.makedirs(os.path.join(root_dir, 'trials_data'), exist_ok=True)
 
-    # Experiment(fullscreen=True)
+    Experiment(fullscreen=True)
+    
+    StatisticalAnalysis()
