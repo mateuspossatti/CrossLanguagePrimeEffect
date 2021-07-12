@@ -1,0 +1,12 @@
+This study aims to investigate the cognitive bases of bilingualism on brazilians that speak both Portuguese and English.
+
+For this, the experiment consists of exposing words (in Portuguese or English) on the computer screen. For each word displayed on the screen, you have the objective of answering whether it represents a concrete concept (animals, objects, food…) or an abstract concept (actions, feelings, adjectives…):
+
+- Concrete concept (eg.: cat): press the “{concrete_key}” key on the keyboard.
+- Abstract concept (eg.: rain): press the “{abstract_key}” key on the keyboard.
+
+Prior to the trial period, you will participate in a training period consisting of 50 words. The first 25 words will be in English, followed by 25 words in Portuguese.
+
+Please, when ready, press the “Enter” key on your keyboard to start the training period.
+
+If you don't want to go through the training, press the "Backspace" key on your keyboard to skip the training period.
