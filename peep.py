@@ -11,7 +11,7 @@ import os
 
 class Experiment:
     def __init__(self, n=None, mask_case='upper', pairs_n=50, fullcross=True, conditions_n=3, mask_size=8, onelanguageorder=None,
-    fullscreen=False, timeparadigm=None, kb_keys=None, save=None, practiceLeng=50):
+    fullscreen=True, timeparadigm=None, kb_keys=None, save=None, practiceLeng=50):
         """:Parameters:
         fullcross: will ditermine if the effect will be studied in the two ways.
         n: the number of the subject, will ditermine the sequence of trial and the language of intructions.
@@ -603,9 +603,9 @@ class Experiment:
         studyTitle = 'Cross-Language Associative Priming Effect Study'
 
         # Load the instructions according to language choice
-        textPor = open(r'.\support_material\introductionTextPor.txt', 'r', encoding='utf8').read().format(concrete_key=concrete_key, abstract_key=abstract_key)
+        textPor = open(r'.\support_material\text_msg\introductionTextPor.txt', 'r', encoding='utf8').read().format(concrete_key=concrete_key, abstract_key=abstract_key)
 
-        textEng = open(r'.\support_material\introductionTextEng.txt', 'r', encoding='utf8').read().format(concrete_key=concrete_key, abstract_key=abstract_key)
+        textEng = open(r'.\support_material\text_msg\introductionTextEng.txt', 'r', encoding='utf8').read().format(concrete_key=concrete_key, abstract_key=abstract_key)
 
         # Verify what is the correct idiom of the instructions
         textLang = self.language_order[:3]
@@ -817,13 +817,13 @@ class Experiment:
 
         # Load texts:
         if self.language_order[:3] == 'Por':
-            _endPracText = open(r'.\support_material\endPracticePor.txt', 'r', encoding='utf8').read()
+            _endPracText = open(r'.\support_material\text_msg\endPracticePor.txt', 'r', encoding='utf8').read()
             _titleText = 'Fim da Prática'
             _endText = """Por favor, pressione a tecla "Enter" no teclado para começar o período de avaliação."""
         elif self.language_order[:3] == 'Eng':
             _endText = """Please press "Enter" key on your keyboard to start the trial period."""
             _titleText = 'End of Practice'
-            _endPracText = open(r'.\support_material\endPracticeEng.txt', 'r', encoding='utf8').read()
+            _endPracText = open(r'.\support_material\text_msg\endPracticeEng.txt', 'r', encoding='utf8').read()
 
         titleText = visual.TextStim(self.win, text=_titleText, color=(-1, -1, -1), units='norm', wrapWidth=1.8, alignText='center', height=0.15, pos=(0, 0.8))
 
@@ -896,11 +896,11 @@ class Experiment:
 
         # Load texts:
         if self.language_order[:3] == 'Por':
-            _interText = open(r'.\support_material\interLanguageTextPor.txt', 'r', encoding='utf8').read()
+            _interText = open(r'.\support_material\text_msg\interLanguageTextPor.txt', 'r', encoding='utf8').read()
             _titleText = 'Fim da Avaliação do Primeiro Idioma'
             _endText = """Por favor, pressione a tecla "Enter" no teclado para começar o período de avaliação da próxima língua."""
         elif self.language_order[:3] == 'Eng':
-            _interText = open(r'.\support_material\interLanguageTextEng.txt', 'r', encoding='utf8').read()
+            _interText = open(r'.\support_material\text_msg\interLanguageTextEng.txt', 'r', encoding='utf8').read()
             _titleText = 'End of the First Language Evaluation'
             _endText = """Please press "Enter" key on your keyboard to start the next language trial period."""
 
@@ -976,10 +976,10 @@ class Experiment:
 
         # Load texts:
         if self.language_order[:3] == 'Por':
-            _endText = open(r'.\support_material\endExpTextPor.txt', 'r', encoding='utf8').read() 
+            _endText = open(r'.\support_material\text_msg\endExpTextPor.txt', 'r', encoding='utf8').read() 
             _titleText = 'Fim do Experimento'
         elif self.language_order[:3] == 'Eng':
-            _endText = open(r'.\support_material\endExpTextEng.txt', 'r', encoding='utf8').read()
+            _endText = open(r'.\support_material\text_msg\endExpTextEng.txt', 'r', encoding='utf8').read()
             _titleText = 'End of the Experiment'
 
         title = visual.TextStim(self.win, text=_titleText, units='norm', pos=(0, 0.8), color=(-1, -1, -1), wrapWidth=1.75, height=0.15)
@@ -1451,4 +1451,4 @@ if __name__ == '__main__':
     root_dir = os.path.dirname(__file__)
     os.makedirs(os.path.join(root_dir, 'trials_data'), exist_ok=True)
 
-    Experiment(n=None, save=False, fullscreen=True)
+    Experiment()
