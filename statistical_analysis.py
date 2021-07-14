@@ -410,17 +410,20 @@ class StatisticalAnalysis:
 
         # Print out the test vs control error analysis:
         print('Test VS Control Error Analysis:', self.testControlF)
-
+        sns.set_style('darkgrid')
         # Create fig and axes objects
         fig, axes = plt.subplots(2, 2, figsize=(16, 16))
 
+        axes[0, 0].set_title('English')
+        axes[0, 1].set_title('Portuguese')
+
         dataPorEng = data[data['l1_l2'] == l1_l2[0]]
-        sns.catplot(data=dataPorEng, x=first_hue, y='response_time', ax=axes[0, 0], order=sequence, kind='box')
-        axes[0, 0].grid(axis='y', which='major')
+        sns.boxplot(data=dataPorEng, x=first_hue, y='response_time', ax=axes[0, 0], order=sequence)
+        # axes[0, 0].grid(axis='y', which='major')
 
         dataEngPor = data[data['l1_l2'] == l1_l2[1]]
-        sns.catplot(data=dataEngPor, x=first_hue, y='response_time', ax=axes[0, 1], order=sequence, kind='box')
-        axes[0, 1].grid(axis='y', which='major')
+        sns.boxplot(data=dataEngPor, x=first_hue, y='response_time', ax=axes[0, 1], order=sequence)
+        # axes[0, 1].grid(axis='y', which='major')
 
 
         sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'control']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='g')
