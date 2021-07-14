@@ -1451,4 +1451,4 @@ if __name__ == '__main__':
     root_dir = os.path.dirname(__file__)
     os.makedirs(os.path.join(root_dir, 'trials_data'), exist_ok=True)
 
-    Experiment(n=None, save=True, fullscreen=True)
+    Experiment(n=None, save=False, fullscreen=True)
