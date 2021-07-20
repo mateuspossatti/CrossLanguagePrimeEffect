@@ -12,7 +12,7 @@ class StatisticalAnalysis:
                     break
                 except ValueError:
                     print("Oops!  That was no valid number.  Try again...")
-
+                    
         self.subject_n = n
 
         # Create the attribute subject_df that will be used in the full_preprocess function
