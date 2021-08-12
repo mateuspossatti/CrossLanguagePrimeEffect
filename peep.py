@@ -10,8 +10,8 @@ import json
 import os
 
 class Experiment:
-    def __init__(self, n=None, mask_case='upper', pairs_n=50, fullcross=True, conditions_n=3, mask_size=8, onelanguageorder=None,
-    fullscreen=True, timeparadigm=None, kb_keys=None, save=None, practiceLeng=50):
+    def __init__(self, n=0, mask_case='upper', fullcross=True, control=True, mask_size=8, onelanguageorder=None,
+    fullscreen=True, timeparadigm=None, kb_keys=None, save=True, practiceLeng=50):
         """:Parameters:
         fullcross: will ditermine if the effect will be studied in the two ways.
         n: the number of the subject, will ditermine the sequence of trial and the language of intructions.
@@ -55,10 +55,25 @@ class Experiment:
             self.mask_char = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
         elif mask_case == 'lower':
             self.mask_char = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+
+        if control == True:
+            conditions_n = 3
+            pairs_n = 50
+            self.conditions = ['congruent', 'incongruent', 'control']
+            
+
+
+
+        else:
+            conditions_n = 2
+            pairs_n = 75
+            self.conditions = ['congruent', 'incongruent']
+
         if fullcross == True:
             self.totaltrials_n = pairs_n * conditions_n * 2
         elif fullcross == False:
             self.totaltrials_n = pairs_n * conditions_n
+
         if onelanguageorder != None:
             self.onelanguageorder = onelanguageorder
         if timeparadigm == None:
@@ -71,8 +86,8 @@ class Experiment:
             self.kb_keys = kb_keys
 
 # DEFINE THE OTHER ATTRIBUTES
-        self.conditions = ['congruent', 'incongruent', 'control']
         self.subject_n = n
+        self.control = control
         self.pairs_n = pairs_n
         self.language_n = pairs_n * conditions_n
         self.fullcross = fullcross
@@ -169,14 +184,21 @@ class Experiment:
             index_f = list(np.random.choice(np.arange(self.language_n), replace=False, size=self.language_n))
             index_s = list(np.random.choice(np.arange(self.language_n), replace=False, size=self.language_n))
 
-            # CREATE CLASSES
             class_list = []
-            for _ in range(self.pairs_n):
-                class_list.append(self.conditions[0])
-            for _ in range(self.pairs_n):
-                class_list.append(self.conditions[1])
-            for _ in range(self.pairs_n):
-                class_list.append(self.conditions[2])
+            # CREATE CLASSES
+            if self.control == True:
+                for _ in range(self.pairs_n):
+                    class_list.append(self.conditions[0])
+                for _ in range(self.pairs_n):
+                    class_list.append(self.conditions[1])
+                for _ in range(self.pairs_n):
+                    class_list.append(self.conditions[2])
+            
+            elif self.control == False:
+                for _ in range(self.pairs_n):
+                    class_list.append(self.conditions[0])
+                for _ in range(self.pairs_n):
+                    class_list.append(self.conditions[1])
 
             # CREATE DATAFRAMES
             def create_incong_df():
@@ -194,28 +216,49 @@ class Experiment:
 
             if fullcross:
                 # LANGUAGE ORDER
+
                 lo = self.language_order
-                if lo == 'PorEng-EngPor':
-                    first = ['Portuguese', 'English', 'PseudoPor']
-                    second = ['English', 'Portuguese', 'PseudoEng']
-                else:
-                    first = ['English', 'Portuguese', 'PseudoEng']
-                    second = ['Portuguese', 'English', 'PseudoPor']
+                if self.control == True:
+                    if lo == 'PorEng-EngPor':
+                        first = ['Portuguese', 'English', 'PseudoPor']
+                        second = ['English', 'Portuguese', 'PseudoEng']
+                    else:
+                        first = ['English', 'Portuguese', 'PseudoEng']
+                        second = ['Portuguese', 'English', 'PseudoPor']
 
-                # FIRST TRIAL
-                # PRIME SEQUENCE
-                prime_f = cong_df[first[0]].append(incong_df[first[0]].append(control_df[first[2]])).reset_index(drop=True)
+                                # FIRST TRIAL
+                    # PRIME SEQUENCE
+                    prime_f = cong_df[first[0]].append(incong_df[first[0]].append(control_df[first[2]])).reset_index(drop=True)
 
-                # Put the prime in UPPER CASE
-                prime_f_UC = []
-                for i in range(prime_f.shape[0]):
-                    word = prime_f[i].upper()
-                    prime_f_UC.append(word)
+                    # Put the prime in UPPER CASE
+                    prime_f_UC = []
+                    for i in range(prime_f.shape[0]):
+                        word = prime_f[i].upper()
+                        prime_f_UC.append(word)
 
-                prime_f = prime_f_UC
+                    prime_f = prime_f_UC
 
-                # TARGET SEQUENCE
-                target_f = cong_df[first[1]].append(incong_df[first[1]].append(control_df[first[1]])).reset_index(drop=True)
+                    # TARGET SEQUENCE
+                    target_f = cong_df[first[1]].append(incong_df[first[1]].append(control_df[first[1]])).reset_index(drop=True)
+                
+                    ex_prime = list(np.random.choice(np.arange(50), replace=False, size=25))
+
+                    df = words_df.loc[ex_prime, first[0]].values
+
+
+                    print(df)
+                elif self.control == False:
+                    if lo == 'PorEng-EngPor':
+                        first = ['Portuguese', 'English']
+                        second = ['English', 'Portuguese']
+                    else:
+                        first = ['English', 'Portuguese']
+                        second = ['Portuguese', 'English']
+
+                    # CHOOSE 25 EXTRA PRIMES
+
+
+                    
 
                 # PRIME-TARGET DATA FRAME
                 # print(key_response_sequence, class_list)
@@ -285,38 +328,7 @@ class Experiment:
         self.first_sequence, self.second_sequence = words_sequence()
 
 # QUESTION THE USER IF HIS WANT TO START THE EXPERIMENT
-        while True:
-            startexp = str(input('Do you want to begin the expriment?\n(y/n): ')).lower()
-            if startexp != 'y' and startexp != 'n':
-                print('The command typed ("{}") is invalid, please type "y" to begin the experiment\nor "n" to continue without begin the experiment.'.format(startexp))
-            
-            # THE USER WANT TO BEGIN THE EXPERIMENT
-            elif startexp == 'y':
-
-                # QUESTION THE USER ABOUT HIS FULLSCREEN PREFERENCE
-                if fullscreen is None:
-                    while True:
-                        fs = str(input('Do you want to run the experiment in fullscreen?\n(y/n): ')).lower()
-                        if fs != 'y' and fs != 'n':
-                            print('The command typed ("{}") is invalid, please type "y" to make the experiment fullscreen\nor "n" to not make the experiment fullscreen'.format(fs))
-                            pass
-                        elif fs == 'y':
-                            self.fullscreen = True
-                            break
-                        else:
-                            self.fullscreen = False
-                            break
-
-                self.data_trial_final = self.startExperiment(save=save)
-                return
-
-            # THE USER DON'T WANT TO BEGIN THE EXPERIMENT
-            else:
-                try:
-                    self.win.close()
-                    return
-                except AttributeError:
-                    return
+        # self.data_trial_final = self.startExperiment(save=save)
 
 ############# END OF __INIT__() #################
 
