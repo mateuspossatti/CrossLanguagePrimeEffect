@@ -50,7 +50,7 @@ class Experiment:
                 except ValueError:
                     print("Oops!  That was no valid number.  Try again...")
 
-# DEFINE ATTRIBUTES BASED ON CODITIONAL STATEMENTS
+        # Define attributes based on coditional statements.
         if mask_case == 'upper':
             self.mask_char = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
         elif mask_case == 'lower':
@@ -59,11 +59,7 @@ class Experiment:
         if control == True:
             conditions_n = 3
             pairs_n = 50
-            self.conditions = ['congruent', 'incongruent', 'control']
-            
-
-
-
+            self.conditions = ['congruent', 'incongruent', 'control']    
         else:
             conditions_n = 2
             pairs_n = 75
@@ -85,7 +81,7 @@ class Experiment:
         else:
             self.kb_keys = kb_keys
 
-# DEFINE THE OTHER ATTRIBUTES
+        # Define others attributes
         self.subject_n = n
         self.control = control
         self.pairs_n = pairs_n
@@ -96,18 +92,15 @@ class Experiment:
         self.screen_hz = self.monDict['monitor_frequency']
         self.practiceLeng = practiceLeng
 
-# PRINT FULL DATAFRAME
+        # Print full dataframe.
         pd.set_option("display.max_rows", None, "display.max_columns", None)
 
-# CREATE A GLOBAL KEY EVENT TO QUIT THE PROGRAM
-        # Determine key and modifires
+        # Create a global key event to quit the program.
         key = 'q'
         modifiers = ['ctrl']
-
-        # Create global key event
         event.globalKeys.add(key=key, modifiers=modifiers, func=core.quit)
 
-# DETERMINE LANGUAGE ORDER FOR THE ACTUAL SUBJECT
+        # Determine language order for the actual subject.
         def subject_experiment_order():
             left, right = self.kb_keys
             if fullcross == True:
@@ -132,7 +125,7 @@ class Experiment:
         self.firstLang = self.language_order.split('-')[0]
         self.secondLang = self.language_order.split('-')[1]
 
-# DETERMINE FRAME DURATION:
+        # Determine frame duration time in ms.
         def frame_duration():
             ms_paradigm = self.timeparadigm
             screen_hz = self.screen_hz
@@ -143,14 +136,14 @@ class Experiment:
 
         self.frame_paradigm = frame_duration()
 
-# CREATE CLOCK, KEYBOARD
+        # CREATE CLOCK, KEYBOARD
         self.kbclock = clock.Clock()
 
         self.monitorclock = clock.Clock()
 
-# CREATE MONITOR
+        # Create a monitor object.
         def set_monitor():
-            # Load monitor settings
+            # Load monitor settings.
             name = self.monDict['monitor_name']
             width = self.monDict['monitor_width']
             resol = self.monDict['monitor_resolution']
@@ -162,7 +155,7 @@ class Experiment:
 
         self.mon = set_monitor()
 
-# DEFINE WORDS SEQUENCE
+        # Define words sequence.
         def words_sequence():
             # LOAD CSV
             words_df = pd.read_csv(r'.\support_material\words.csv').columns
@@ -184,21 +177,11 @@ class Experiment:
             index_f = list(np.random.choice(np.arange(self.language_n), replace=False, size=self.language_n))
             index_s = list(np.random.choice(np.arange(self.language_n), replace=False, size=self.language_n))
 
+            # Create a list with the paris classes
             class_list = []
-            # CREATE CLASSES
-            if self.control == True:
+            for i in range(conditions_n):
                 for _ in range(self.pairs_n):
-                    class_list.append(self.conditions[0])
-                for _ in range(self.pairs_n):
-                    class_list.append(self.conditions[1])
-                for _ in range(self.pairs_n):
-                    class_list.append(self.conditions[2])
-            
-            elif self.control == False:
-                for _ in range(self.pairs_n):
-                    class_list.append(self.conditions[0])
-                for _ in range(self.pairs_n):
-                    class_list.append(self.conditions[1])
+                    class_list.append(self.conditions[i])
 
             # CREATE DATAFRAMES
             def create_incong_df():
@@ -331,166 +314,6 @@ class Experiment:
         # self.data_trial_final = self.startExperiment(save=save)
 
 ############# END OF __INIT__() #################
-
-    def define_mon_settings(self):
-        print("""Unfortunately, you don't have set your monitor settings yet.\nPlease, answer the next 4 questions to configure your monitor correctly""")
-        # Question the name of the monitor
-        def question_mon_name():
-            # Question about the name of the monitor:
-            name = str(input('What name do you want to give to your monitor? ')) 
-
-            # Confirm with the user if he really want to use the name typed:
-            while True:
-                confirm_name = str(input('Are you certain that you want to use "{name}" as the name of your monitor?\n (y/n): '.format(name=name))).lower()
-
-                # Command typed is invalid:
-                if confirm_name != 'y' and confirm_name != 'n':
-                    print("""The command typed "{confirm_name}" is invalid, please type "y" to use "{name}" as your monitor's name\nor type "n" to choose a new name.""".format(name=name, confirm_name=confirm_name))
-                
-                # The user want to choose another name
-                elif confirm_name == 'n':
-                    name = question_mon_name()
-                    break
-                
-                # The user confirmed the name
-                else:
-                    break
-
-            return name
-
-        # Question width of the monitor:
-        def question_mon_width():
-            # Question the width of the display
-            while True:
-                try:
-                    width = float(input('Please, insert the width of your display in "cm": '))
-                    break
-
-                except ValueError:
-                    print("""Oops!  That was no valid number format.\nPlease, verify if you separated the decimals with a "." and not a ",". You typed "{width}".""".format(width=width))
-
-                # Confirm with the user if the width is correct
-            while True:
-                confirm_vert_pix = str(input('Please, confirm if you typed the correct value. Width = {width} cm.\n (y/n): '.format(width=width))).lower()
-
-                # Command typed is invalid:
-                if confirm_vert_pix != 'y' and confirm_vert_pix != 'n':
-                    print("""The command typed "{confirm_vert_pix}" is invalid, please type "y" to confirm that the display's width is {width} cm.\nor type "n" to choose a new value for the display's width.""".format(width=width, confirm_vert_pix=confirm_vert_pix))
-
-                # The user want to choose another value
-                elif confirm_vert_pix == 'n':
-                    width = question_mon_width()
-                    break
-
-                # The user confirmed the display's width
-                else:
-                    break
-
-            return width
-
-        # Question monitor's resolution
-        def question_mon_resol():
-            print("""Please, read the brief introduction bellow to answer the next 2 questions about the resolution of your monitor.\nNormally, the monitor's resolution is in (x, y) format, where the "x" represents the quantity of pixels in the horizontal, and "y" represents the number of pixels in the vertical.\nFor example, a monitor with the resolution 1920 x 1080 have 1920 pixels in the horizontal length and 1080 in the vertical length.""")
-
-            def question_vert_pix():
-                # Question the width of the display
-                while True:
-                    try:
-                        vert_pix = int(input('How many pixels in the VERTICAL have your monitor? '))
-                        break
-
-                    except ValueError:
-                        print("Oops!  That was no valid number.  Try again...")
-
-                    # Confirm with the user if the vert_pix is correct
-                while True:
-                    confirm_vert_pix = str(input('Please, confirm if you typed the correct value for the VERTICAL number of pixels. Your answer was {vert_pix}\n (y/n): '.format(vert_pix=vert_pix))).lower()
-
-                    # Command typed is invalid:
-                    if confirm_vert_pix != 'y' and confirm_vert_pix != 'n':
-                        print("""The command typed "{confirm_vert_pix}" is invalid, please type "y" to confirm that your monitor have {vert_pix} pixels in the HORIZONTAL.\nor type "n" to choose a new value to the number of HORIZONTAL pixels in your monitor.""".format(vert_pix=horz_pix, confirm_vert_pix=confirm_vert_pix))
-
-                    # The user want to choose another value
-                    elif confirm_vert_pix == 'n':
-                        vert_pix = question_vert_pix()
-                        break
-
-                    # The user confirmed the display's vert_pix
-                    else:
-                        break
-
-                return vert_pix
-
-            def question_horz_pix():
-                # Question the width of the display
-                while True:
-                    try:
-                        horz_pix = int(input('How many pixels in the HORIZONTAL have your monitor? '))
-                        break
-
-                    except ValueError:
-                        print("Oops!  That was no valid number.  Try again...")
-
-                    # Confirm with the user if the horz_pix is correct
-                while True:
-                    confirm_horz_pix = str(input('Please, confirm if you typed the correct value for the HORIZONTAL number of pixels. Your answer was {horz_pix}\n (y/n): '.format(horz_pix=horz_pix))).lower()
-
-                    # Command typed is invalid:
-                    if confirm_horz_pix != 'y' and confirm_horz_pix != 'n':
-                        print("""The command typed "{confirm_horz_pix}" is invalid, please type "y" to confirm that your monitor have {horz_pix} pixels in the HORIZONTAL.\nor type "n" to choose a new value to the number of HORIZONTAL pixels in your monitor.""".format(horz_pix=horz_pix, confirm_horz_pix=confirm_horz_pix))
-
-                    # The user want to choose another value
-                    elif confirm_horz_pix == 'n':
-                        horz_pix = question_horz_pix()
-                        break
-
-                    # The user confirmed the display's vert_pix
-                    else:
-                        break
-
-                return horz_pix
-
-            horz_pix = question_horz_pix()
-            vert_pix = question_vert_pix()
-
-            return (horz_pix, vert_pix)
-
-        # Question the monitor's frequency
-        def question_mon_freq():
-            print("""All monitors have a frame rate value that says how many "images" the monitor can display per second.\nThe most commom frame rate value is 60 Hz.""")
-            while True:
-                try:
-                    freq = int(input('Please, insert the frame rate of your monitor in "hz" (hertz): '))
-                    break
-
-                except ValueError:
-                    print("Oops!  That was no valid number.  Try again...")
-
-                # Confirm with the user if the freq is correct
-            while True:
-                confirm_mon_freq = str(input('Please, confirm if you typed the correct value. Your answer was {freq} Hz.\n (y/n): '.format(freq=freq))).lower()
-
-                # Command typed is invalid:
-                if confirm_mon_freq != 'y' and confirm_mon_freq != 'n':
-                    print("""The command typed "{confirm_mon_freq}" is invalid, please type "y" to confirm that the monitor's frame rate is {freq} Hz.\nor type "n" to choose a new value for the monitor's frame rate.""".format(freq=freq, confirm_mon_freq=confirm_mon_freq))
-
-                # The user want to choose another value
-                elif confirm_mon_freq == 'n':
-                    freq = question_mon_freq()
-                    break
-
-                # The user confirmed the display's freq
-                else:
-                    break
-
-            return freq
-
-        name = question_mon_name()
-        width = question_mon_width()
-        resolution = question_mon_resol()
-        freq = question_mon_freq()
-
-        return name, width, resolution, freq
 
     def set_window(self):
         # If there's no monitor object, create it
@@ -1317,7 +1140,8 @@ class Experiment:
 
                                 # PRINT OUT THE DATA
                                 elif printdata == 'y':
-                                    with pd.option_context('display.max_rows', None, 'display.max_columns', None): print(data_trial_final)
+                                    with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+                                        print(data_trial_final)
                                     break
 
                                 # Don't print data
@@ -1448,9 +1272,7 @@ class Experiment:
                 except FileNotFoundError:
                     data_trial_final.to_csv(r'.\trials_data\subject-{}.csv'.format(self.subject_n))
                     print('The data was saved successfully on the file named "subject-{}.csv" in the "trials_data" directory.'.format(self.subject_n))
-
                     self.win.close()
-
                     return data_trial_final
 
             # IF SAVE IS FALSE THAN RETURN DATA AND CLOSE WINDOW.
