@@ -10,7 +10,7 @@ import json
 import os
 
 class Experiment:
-    def __init__(self, n=0, mask_case='upper', fullcross=True, control=True, mask_size=8, onelanguageorder=None,
+    def __init__(self, n=None, mask_case='upper', fullcross=True, control=False, mask_size=8, onelanguageorder=None,
     fullscreen=True, timeparadigm=None, kb_keys=None, save=True, practiceLeng=50):
         """:Parameters:
         fullcross: will ditermine if the effect will be studied in the two ways.
@@ -91,6 +91,7 @@ class Experiment:
         self.fullscreen = fullscreen
         self.screen_hz = self.monDict['monitor_frequency']
         self.practiceLeng = practiceLeng
+        self.save = save
 
         # Print full dataframe.
         pd.set_option("display.max_rows", None, "display.max_columns", None)
@@ -164,14 +165,27 @@ class Experiment:
                 col_names[col] = str
             words_df = pd.read_csv(r'.\support_material\words.csv', dtype=col_names)
 
+            if fullcross:
+                # Decide language order.
+                lo = self.language_order
+                if lo == 'PorEng-EngPor':
+                    first = ['Portuguese', 'English', 'PseudoPor']
+                    second = ['English', 'Portuguese', 'PseudoEng']
+                else:
+                    first = ['English', 'Portuguese', 'PseudoEng']
+                    second = ['Portuguese', 'English', 'PseudoPor']
+
             # CREATE KEY RESPONSE LIST
             obj, nobj = tuple(self.kb_key_response.values())
             key_response_sequence = []
-            for _ in range(conditions_n):
-                for _ in range(int(self.pairs_n / 2)):
-                    key_response_sequence.append(obj)
-                for _ in range(int(self.pairs_n / 2)):
-                    key_response_sequence.append(nobj)
+
+            for _ in range(25):
+                key_response_sequence.append(obj)
+            for _ in range(25):
+                key_response_sequence.append(nobj)
+
+            words_df.insert(4, 'Correct_key', key_response_sequence)
+            words_df.insert(5, 'Word_index', [i for i in range(50)])
 
             # CREATE INDEX
             index_f = list(np.random.choice(np.arange(self.language_n), replace=False, size=self.language_n))
@@ -185,103 +199,98 @@ class Experiment:
 
             # CREATE DATAFRAMES
             def create_incong_df():
-                eng_por = words_df.loc[:, ['Portuguese', 'English']]
-                end_a, end_b = np.array((int(self.pairs_n / 2), self.pairs_n)) - 1
-                new_incong_ob = [eng_por['English'][end_a]] + list(eng_por['English'][:end_a].values) + \
-                    [eng_por['English'][end_b]] + list(eng_por['English'][(end_a + 1):end_b])
-                eng_por['English'] = new_incong_ob
+                if control == False:
+                    pairs_n = 50
+                else:
+                    pairs_n = self.pairs_n
 
-                return eng_por 
+                key_response_sequence_por = words_df.loc[:, 'Correct_key']
+                key_response_sequence_eng = []
 
-            cong_df = words_df[['Portuguese', 'English']]
-            incong_df = create_incong_df()
-            control_df = words_df
-
-            if fullcross:
-                # LANGUAGE ORDER
-
-                lo = self.language_order
-                if self.control == True:
-                    if lo == 'PorEng-EngPor':
-                        first = ['Portuguese', 'English', 'PseudoPor']
-                        second = ['English', 'Portuguese', 'PseudoEng']
+                for i in key_response_sequence_por:
+                    if i == 'm':
+                        key_response_sequence_eng.append('z')
                     else:
-                        first = ['English', 'Portuguese', 'PseudoEng']
-                        second = ['Portuguese', 'English', 'PseudoPor']
-
-                                # FIRST TRIAL
-                    # PRIME SEQUENCE
-                    prime_f = cong_df[first[0]].append(incong_df[first[0]].append(control_df[first[2]])).reset_index(drop=True)
-
-                    # Put the prime in UPPER CASE
-                    prime_f_UC = []
-                    for i in range(prime_f.shape[0]):
-                        word = prime_f[i].upper()
-                        prime_f_UC.append(word)
-
-                    prime_f = prime_f_UC
-
-                    # TARGET SEQUENCE
-                    target_f = cong_df[first[1]].append(incong_df[first[1]].append(control_df[first[1]])).reset_index(drop=True)
-                
-                    ex_prime = list(np.random.choice(np.arange(50), replace=False, size=25))
-
-                    df = words_df.loc[ex_prime, first[0]].values
+                        key_response_sequence_eng.append('m')
 
 
-                    print(df)
-                elif self.control == False:
-                    if lo == 'PorEng-EngPor':
-                        first = ['Portuguese', 'English']
-                        second = ['English', 'Portuguese']
-                    else:
-                        first = ['English', 'Portuguese']
-                        second = ['Portuguese', 'English']
+                incong_df = words_df.loc[:, ['Portuguese', 'English', 'Word_index']]
+                end_a, end_b = np.array((int(pairs_n / 2), pairs_n)) - 1
+                incong_pairs = [incong_df['English'][end_b]] + list(incong_df['English'][(end_a + 1):end_b]) + \
+                    [incong_df['English'][end_a]] + list(incong_df['English'][:end_a].values)
 
-                    # CHOOSE 25 EXTRA PRIMES
+                incong_df['English'] = incong_pairs
+                incong_df.insert(2, 'Correct_key_por', key_response_sequence_por)
+                incong_df.insert(3, 'Correct_key_eng', key_response_sequence_eng)
 
+                if control == False:
+                    extra_pairs_index = list(np.random.choice(np.arange(50), replace=False, size=25))
+                    incong_pairs = incong_df.append(incong_df.loc[extra_pairs_index, :]).reset_index(drop=True)
+                    return incong_pairs
 
-                    
+                else:
+                    return incong_df 
 
-                # PRIME-TARGET DATA FRAME
-                # print(key_response_sequence, class_list)
-                prime_target_first = pd.DataFrame(data={
-                    'prime_{}'.format(first[0][:3].lower()) : prime_f,
-                    'target_{}'.format(first[1][:3].lower()) : target_f,
-                    'correct_response' : key_response_sequence,
-                    'class' : class_list,
-                    'original_index' : [i for i in range(self.language_n)]
-                    })
-
-                # SECOND TRIAL
-                # PRIME SEQUENCE
-                prime_s = cong_df[second[0]].append(incong_df[second[0]].append(control_df[second[2]])).reset_index(drop=True)
-
-                # Put the prime in UPPER CASE
-                prime_s_UC = []
-                for i in range(prime_s.shape[0]):
-                    word = prime_s[i].upper()
-                    prime_s_UC.append(word)
-
-                prime_s = prime_s_UC
-
-                # TARGET SEQUENCE
-                target_s = cong_df[second[1]].append(incong_df[second[1]].append(control_df[second[1]])).reset_index(drop=True)
-
-                # PRIME-TARGET DATA FRAME
-                prime_target_second = pd.DataFrame(data={
-                    'prime_{}'.format(second[0][:3].lower()) : prime_s,
-                    'target_{}'.format(second[1][:3].lower()) : target_s,
-                    'correct_response' : key_response_sequence,
-                    'class' : class_list,
-                    'original_index' : [i for i in range(self.language_n)]
-                    })
-
-                # prime_target_second = None
-
-                return prime_target_first.reindex(index_f).reset_index(drop=True), prime_target_second.reindex(index_s).reset_index(drop=True)
+            if control == False:
+                extra_pairs_index = list(np.random.choice(np.arange(50), replace=False, size=25))
+                cong_df = words_df[['Portuguese', 'English', 'Correct_key', 'Word_index']].append(words_df.loc[extra_pairs_index, ['Portuguese', 'English', 'Correct_key', 'Word_index']]).reset_index(drop=True)
 
             else:
+                cong_df = words_df[['Portuguese', 'English', 'Correct_key', 'Word_index']]
+                control_df = words_df
+
+
+            incong_df = create_incong_df()
+
+            # Decide prime-target pairs
+            if control == False:
+                prime_f = cong_df[first[0]].append(incong_df[first[0]]).reset_index(drop=True)
+                target_f = cong_df[[first[1], 'Word_index']].append(incong_df[[first[1], 'Word_index']]).reset_index(drop=True)
+                key_response_f = cong_df['Correct_key'].append(incong_df['Correct_key_{}'.format(first[1][:3].lower())]).values
+
+                prime_s = cong_df[second[0]].append(incong_df[second[0]]).reset_index(drop=True)
+                target_s = cong_df[[second[1], 'Word_index']].append(incong_df[[second[1], 'Word_index']]).reset_index(drop=True)
+                key_response_s = cong_df['Correct_key'].append(incong_df['Correct_key_{}'.format(second[1][:3].lower())]).values                   
+
+            else:
+                prime_f = cong_df[first[0]].append(incong_df[first[0]].append(control_df[first[2]])).reset_index(drop=True)
+                target_f = cong_df[[first[1], 'Word_index']].append(incong_df[[first[1], 'Word_index']].append(control_df[[first[1], 'Word_index']])).reset_index(drop=True)
+                key_response_f = cong_df['Correct_key'].append(incong_df['Correct_key_{}'.format(first[1][:3].lower())]).append(control_df['Correct_key']).values
+
+                prime_s = cong_df[second[0]].append(incong_df[second[0]].append(control_df[second[2]])).reset_index(drop=True)
+                target_s = cong_df[[second[1], 'Word_index']].append(incong_df[[second[1], 'Word_index']].append(control_df[[second[1], 'Word_index']])).reset_index(drop=True)
+                key_response_s = cong_df['Correct_key'].append(incong_df['Correct_key_{}'.format(second[1][:3].lower())]).append(control_df['Correct_key']).values
+
+            # Put the prime in UPPER CASE
+            def prime_uppercase(df):
+                prime_f_UC = []
+                for i in range(df.shape[0]):
+                    word = df[i].upper()
+                    prime_f_UC.append(word)
+
+                return prime_f_UC
+
+            prime_f = prime_uppercase(prime_f)
+            prime_s = prime_uppercase(prime_s)
+
+            # Dataframe with prime-target pairs:
+            prime_target_first = pd.DataFrame(data={
+                'prime_{}'.format(first[0][:3].lower()) : prime_f,
+                'target_{}'.format(first[1][:3].lower()) : target_f[first[1]].values,
+                'correct_response' : key_response_f,
+                'class' : class_list,
+                'original_index' : target_f['Word_index'].values
+                })
+
+            prime_target_second = pd.DataFrame(data={
+                'prime_{}'.format(second[0][:3].lower()) : prime_s,
+                'target_{}'.format(second[1][:3].lower()) : target_s[second[1]].values,
+                'correct_response' : key_response_s,
+                'class' : class_list,
+                'original_index' : target_s['Word_index'].values
+                })
+
+            if not fullcross:
                 lo = self.onelanguageorder
                 if lo == 'PorEng':
                     order = ['Portuguese', 'English', 'PseudoPor']
@@ -308,10 +317,13 @@ class Experiment:
 
                 return prime_target, None
 
+            else:
+                return prime_target_first.reindex(index_f).reset_index(drop=True), prime_target_second.reindex(index_s).reset_index(drop=True)
+
         self.first_sequence, self.second_sequence = words_sequence()
 
 # QUESTION THE USER IF HIS WANT TO START THE EXPERIMENT
-        # self.data_trial_final = self.startExperiment(save=save)
+        self.data_trial_final = self.startExperiment(save=self.save)
 
 ############# END OF __INIT__() #################
 
