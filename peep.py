@@ -10,7 +10,7 @@ import json
 import os
 
 class Experiment:
-    def __init__(self, n=None, mask_case='upper', fullcross=True, control=False, mask_size=8, onelanguageorder=None,
+    def __init__(self, n=101, mask_case='upper', fullcross=True, control=False, mask_size=8, onelanguageorder=None,
     fullscreen=True, timeparadigm=None, kb_keys=None, save=True, practiceLeng=50):
         """:Parameters:
         fullcross: will ditermine if the effect will be studied in the two ways.
@@ -279,7 +279,8 @@ class Experiment:
                 'target_{}'.format(first[1][:3].lower()) : target_f[first[1]].values,
                 'correct_response' : key_response_f,
                 'class' : class_list,
-                'original_index' : target_f['Word_index'].values
+                'word_index' : target_f['Word_index'].values,
+                'order' : index_f
                 })
 
             prime_target_second = pd.DataFrame(data={
@@ -287,8 +288,26 @@ class Experiment:
                 'target_{}'.format(second[1][:3].lower()) : target_s[second[1]].values,
                 'correct_response' : key_response_s,
                 'class' : class_list,
-                'original_index' : target_s['Word_index'].values
+                'word_index' : target_s['Word_index'].values,
+                'order' : index_s
                 })
+
+            prime_target_first.reindex(index=['order'], columns=prime_target_first.columns)
+
+            # print(prime_target_first)
+
+            # def fix_duplicates(df):
+            #     for i in range(self.language_n):
+            #         # print(df['word_index'][i])
+            #         x = 1
+            #         if df['word_index'][i] != df['word_index'][i+x]:
+            #             pass
+            #         else:
+            #             df['word_index'][i+x] = df['word_index'][i+x+2]
+            #             print('duplicata eliminada')
+
+            # prime_target_first, prime_target_second = fix_duplicates(prime_target_first), fix_duplicates(prime_target_second)
+            prime_target_first, prime_target_second = prime_target_first, prime_target_second
 
             if not fullcross:
                 lo = self.onelanguageorder
@@ -321,8 +340,8 @@ class Experiment:
                 return prime_target_first.reindex(index_f).reset_index(drop=True), prime_target_second.reindex(index_s).reset_index(drop=True)
 
         self.first_sequence, self.second_sequence = words_sequence()
+        # print(self.first_sequence, self.second_sequence)
 
-# QUESTION THE USER IF HIS WANT TO START THE EXPERIMENT
         self.data_trial_final = self.startExperiment(save=self.save)
 
 ############# END OF __INIT__() #################
@@ -642,7 +661,7 @@ class Experiment:
 
                     # If the response was incorrect play error sound
                     if keyname != target_df['correct_response'][trialN]:
-                        playsound(r'.\support_material\incorrect.mp3')
+                        playsound(r'.\support_material\incorrect2.mp3')
 
                 self.win.flip()
 
@@ -1007,7 +1026,7 @@ class Experiment:
 
                     # Play incorrect sound
                     if keyname != prime_target_df['correct_response'][trialN]:
-                        playsound(r'.\support_material\incorrect.mp3')
+                        playsound(r'.\support_material\incorrect2.mp3')
                         correct_key = False
                     
                     else:

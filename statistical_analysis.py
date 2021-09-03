@@ -3,7 +3,7 @@ import numpy as np
 import seaborn as sns
 import pandas as pd
 class StatisticalAnalysis:
-    def __init__(self, n=None, columns=None, save=None, view_data=None):
+    def __init__(self, n=None, columns=None, control=False, save=None, view_data=None):
         # QUESTION TO THE USER WHAT IS THE VOLUNTEER NUMBER
         if n is None:
             while True:
@@ -23,6 +23,8 @@ class StatisticalAnalysis:
         subject_df = self.subject_raw_df[columns]
         subject_df['response_time'] * 1000
         self.subject_df = subject_df
+
+        self.control = control
 
         # VERIFY IF A FILE WITH THE SAME NAME ALREADY EXIST. IF IT'S NIETHER PREPROCESS DATA OR SAVE WILL BE EXECUTED
         try:
@@ -359,9 +361,13 @@ class StatisticalAnalysis:
         self.testControlF = testControlF 
 
         # Remove outliers
-        data = self.remove_outliers(df=data, group='incongruent')
-        data = self.remove_outliers(df=data, group='congruent')
-        data = self.remove_outliers(df=data, group='control')
+        if self.control is False:
+            data = self.remove_outliers(df=data, group='incongruent')
+            data = self.remove_outliers(df=data, group='congruent')
+        else: 
+            data = self.remove_outliers(df=data, group='incongruent')
+            data = self.remove_outliers(df=data, group='congruent')
+            data = self.remove_outliers(df=data, group='control')
 
         # Normalize the data
         data = self.z_score_normalization(df=data)
@@ -405,45 +411,85 @@ class StatisticalAnalysis:
         else:
             data = df
 
-        sequence = ['incongruent', 'congruent', 'control']
-        l1_l2 = ['PorEng', 'EngPor']
+        if self.control is True:
+            sequence = ['incongruent', 'congruent', 'control']
+            l1_l2 = ['PorEng', 'EngPor']
 
-        # Print out the test vs control error analysis:
-        print('Test VS Control Error Analysis:', self.testControlF)
+            # Print out the test vs control error analysis:
+            print('Test VS Control Error Analysis:', self.testControlF)
 
-        # Create fig and axes objects
-        fig, axes = plt.subplots(2, 2, figsize=(16, 16))
+            # Create fig and axes objects
+            fig, axes = plt.subplots(2, 2, figsize=(16, 16))
 
-        dataPorEng = data[data['l1_l2'] == l1_l2[0]]
-        sns.catplot(data=dataPorEng, x=first_hue, y='response_time', ax=axes[0, 0], order=sequence, kind='box')
-        axes[0, 0].grid(axis='y', which='major')
+            dataPorEng = data[data['l1_l2'] == l1_l2[0]]
+            sns.catplot(data=dataPorEng, x=first_hue, y='response_time', ax=axes[0, 0], order=sequence, kind='box')
+            axes[0, 0].grid(axis='y', which='major')
 
-        dataEngPor = data[data['l1_l2'] == l1_l2[1]]
-        sns.catplot(data=dataEngPor, x=first_hue, y='response_time', ax=axes[0, 1], order=sequence, kind='box')
-        axes[0, 1].grid(axis='y', which='major')
+            dataEngPor = data[data['l1_l2'] == l1_l2[1]]
+            sns.catplot(data=dataEngPor, x=first_hue, y='response_time', ax=axes[0, 1], order=sequence, kind='box')
+            axes[0, 1].grid(axis='y', which='major')
 
 
-        sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'control']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='g')
-        sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'incongruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='b')
-        sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'congruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='tab:orange')
-        sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'control']['response_time'], alpha=.8, ax=axes[1, 0], color='g')
-        sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'incongruent']['response_time'], alpha=.8, ax=axes[1, 0], color='b')
-        sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'congruent']['response_time'], alpha=.8, ax=axes[1, 0], color='tab:orange')
-        axes[1, 0].axvline(np.median(dataPorEng[dataPorEng[first_hue] == 'control']['response_time']), alpha=.8, ymax=.5, c='g')
-        axes[1, 0].axvline(np.median(dataPorEng[dataPorEng[first_hue] == 'incongruent']['response_time']), alpha=.8, ymax=.5, c='b')
-        axes[1, 0].axvline(np.median(dataPorEng[dataPorEng[first_hue] == 'congruent']['response_time']), alpha=.8, ymax=.5, c='tab:orange')
-        axes[1, 0].legend(['control', 'incongruent', 'congruent'])
+            sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'control']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='g')
+            sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'incongruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='b')
+            sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'congruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='tab:orange')
+            sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'control']['response_time'], alpha=.8, ax=axes[1, 0], color='g')
+            sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'incongruent']['response_time'], alpha=.8, ax=axes[1, 0], color='b')
+            sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'congruent']['response_time'], alpha=.8, ax=axes[1, 0], color='tab:orange')
+            axes[1, 0].axvline(np.median(dataPorEng[dataPorEng[first_hue] == 'control']['response_time']), alpha=.8, ymax=.5, c='g')
+            axes[1, 0].axvline(np.median(dataPorEng[dataPorEng[first_hue] == 'incongruent']['response_time']), alpha=.8, ymax=.5, c='b')
+            axes[1, 0].axvline(np.median(dataPorEng[dataPorEng[first_hue] == 'congruent']['response_time']), alpha=.8, ymax=.5, c='tab:orange')
+            axes[1, 0].legend(['control', 'incongruent', 'congruent'])
 
-        sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'control']['response_time'], shade=True, alpha=.2, ax=axes[1, 1], color='g')
-        sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'incongruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 1], color='b')
-        sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'congruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 1], color='tab:orange')
-        sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'control']['response_time'], alpha=.8, ax=axes[1, 1], color='g')
-        sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'incongruent']['response_time'], alpha=.8, ax=axes[1, 1], color='b')
-        sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'congruent']['response_time'], alpha=.8, ax=axes[1, 1], color='tab:orange')
-        axes[1, 1].axvline(np.median(dataEngPor[dataEngPor[first_hue] == 'control']['response_time']), alpha=.8, ymax=.5, c='g')
-        axes[1, 1].axvline(np.median(dataEngPor[dataEngPor[first_hue] == 'incongruent']['response_time']), alpha=.8, ymax=.5, c='b')
-        axes[1, 1].axvline(np.median(dataEngPor[dataEngPor[first_hue] == 'congruent']['response_time']), alpha=.8, ymax=.5, c='tab:orange')
-        axes[1, 1].legend(['control', 'incongruent', 'congruentn'])
+            sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'control']['response_time'], shade=True, alpha=.2, ax=axes[1, 1], color='g')
+            sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'incongruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 1], color='b')
+            sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'congruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 1], color='tab:orange')
+            sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'control']['response_time'], alpha=.8, ax=axes[1, 1], color='g')
+            sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'incongruent']['response_time'], alpha=.8, ax=axes[1, 1], color='b')
+            sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'congruent']['response_time'], alpha=.8, ax=axes[1, 1], color='tab:orange')
+            axes[1, 1].axvline(np.median(dataEngPor[dataEngPor[first_hue] == 'control']['response_time']), alpha=.8, ymax=.5, c='g')
+            axes[1, 1].axvline(np.median(dataEngPor[dataEngPor[first_hue] == 'incongruent']['response_time']), alpha=.8, ymax=.5, c='b')
+            axes[1, 1].axvline(np.median(dataEngPor[dataEngPor[first_hue] == 'congruent']['response_time']), alpha=.8, ymax=.5, c='tab:orange')
+            axes[1, 1].legend(['control', 'incongruent', 'congruentn'])
+
+        else: 
+            sequence = ['incongruent', 'congruent']
+            l1_l2 = ['PorEng', 'EngPor']
+
+            # Print out the test vs control error analysis:
+            print('Test VS Control Error Analysis:', self.testControlF)
+
+            # Create fig and axes objects
+            fig, axes = plt.subplots(2, 2, figsize=(16, 16))
+
+            dataPorEng = data[data['l1_l2'] == l1_l2[0]]
+            sns.catplot(data=dataPorEng, x=first_hue, y='response_time', ax=axes[0, 0], order=sequence, kind='box')
+            axes[0, 0].grid(axis='y', which='major')
+            axes[0, 0].set_title(l1_l2[0])
+
+            dataEngPor = data[data['l1_l2'] == l1_l2[1]]
+            sns.catplot(data=dataEngPor, x=first_hue, y='response_time', ax=axes[0, 1], order=sequence, kind='box')
+            axes[0, 1].grid(axis='y', which='major')
+            axes[0, 0].set_title(l1_l2[1])
+
+            sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'incongruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='b')
+            sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'congruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 0], color='tab:orange')
+            sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'incongruent']['response_time'], alpha=.8, ax=axes[1, 0], color='b')
+            sns.kdeplot(dataPorEng[dataPorEng[first_hue] == 'congruent']['response_time'], alpha=.8, ax=axes[1, 0], color='tab:orange')
+            axes[1, 0].axvline(np.median(dataPorEng[dataPorEng[first_hue] == 'incongruent']['response_time']), alpha=.8, ymax=.5, c='b')
+            axes[1, 0].axvline(np.median(dataPorEng[dataPorEng[first_hue] == 'congruent']['response_time']), alpha=.8, ymax=.5, c='tab:orange')
+            axes[1, 0].legend(['incongruent', 'congruent'])
+            axes[1, 0].set_title(l1_l2[0])
+
+            sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'incongruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 1], color='b')
+            sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'congruent']['response_time'], shade=True, alpha=.2, ax=axes[1, 1], color='tab:orange')
+            sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'incongruent']['response_time'], alpha=.8, ax=axes[1, 1], color='b')
+            sns.kdeplot(dataEngPor[dataEngPor[first_hue] == 'congruent']['response_time'], alpha=.8, ax=axes[1, 1], color='tab:orange')
+            axes[1, 1].axvline(np.median(dataEngPor[dataEngPor[first_hue] == 'incongruent']['response_time']), alpha=.8, ymax=.5, c='b')
+            axes[1, 1].axvline(np.median(dataEngPor[dataEngPor[first_hue] == 'congruent']['response_time']), alpha=.8, ymax=.5, c='tab:orange')
+            axes[1, 1].legend(['incongruent', 'congruent'])
+            axes[0, 0].set_title(l1_l2[1])
+
 
         plt.show()
 
